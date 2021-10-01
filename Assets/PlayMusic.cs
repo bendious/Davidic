@@ -14,44 +14,56 @@ public class PlayMusic : MonoBehaviour
 	[DllImport("__Internal")]
 	private static extern void OSMD_update();
 
-	// Start is called before the first frame update
-	void Start()
-	{
-	}
-
-	// Update is called once per frame
-	void Update()
-	{
-	}
-
-	public uint m_samples_per_second = 44100U;
+	public uint m_samplesPerSecond = 44100U;
 	public bool m_stereo = true;
 	public uint maxPolyphony = 40U;
 
-	public UnityEngine.UI.InputField m_pitch_min_field;
-	public UnityEngine.UI.InputField m_pitch_max_field;
+	public UnityEngine.UI.InputField m_keyMinField;
+	public UnityEngine.UI.InputField m_keyMaxField;
 	public UnityEngine.UI.Dropdown m_rootNoteDropdown;
 	public UnityEngine.UI.Dropdown m_scaleDropdown;
-	public UnityEngine.UI.InputField m_volume_field;
+	public UnityEngine.UI.Dropdown m_instrumentDropdown;
+	public UnityEngine.UI.InputField m_volumeField;
 
 	private StreamSynthesizer musicStreamSynthesizer;
 	private MusicSequencer musicSequencer;
 
 	public string bankFilePath = "GM Bank/gm";
 
+	public void Start()
+	{
+		// create synthesizer
+		// TODO: recreate if relevant params change?
+		int channels = (m_stereo ? 2 : 1);
+		const int bytesPerBuffer = 4096; // TODO?
+		musicStreamSynthesizer = new StreamSynthesizer((int)m_samplesPerSecond, channels, bytesPerBuffer / channels, (int)maxPolyphony);
+		musicStreamSynthesizer.LoadBank(bankFilePath);
+
+		// enumerate instruments in UI
+		m_instrumentDropdown.ClearOptions();
+		List<CSharpSynth.Banks.Instrument> instruments = musicStreamSynthesizer.SoundBank.getInstruments(false);
+		for (int i = 0, n = instruments.Count; i < n; ++i)
+		{
+			if (instruments[i] == null)
+			{
+				continue;
+			}
+			m_instrumentDropdown.options.Add(new UnityEngine.UI.Dropdown.OptionData(instruments[i].Name));
+		}
+		m_instrumentDropdown.RefreshShownValue();
+	}
+
 	public void playMusic(bool isScale)
 	{
 		uint channels = (m_stereo ? 2U : 1U);
 
-		musicStreamSynthesizer = new StreamSynthesizer((int)m_samples_per_second, (int)channels, 4096/*TODO?*/ / (int)channels, (int)maxPolyphony);
-		musicStreamSynthesizer.LoadBank(bankFilePath);
-		musicSequencer = new MusicSequencer(musicStreamSynthesizer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value);
+		musicSequencer = new MusicSequencer(musicStreamSynthesizer, isScale, uint.Parse(m_keyMinField.text), uint.Parse(m_keyMaxField.text), (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)m_instrumentDropdown.value);
 
 		uint length_samples = musicSequencer.lengthSamples;
 
 		AudioSource audio_source = GetComponent<AudioSource>();
-		audio_source.volume = float.Parse(m_volume_field.text);
-		audio_source.clip = AudioClip.Create("Generated Clip", (int)length_samples, (int)channels, (int)m_samples_per_second, false, on_audio_read, on_audio_set_position);
+		audio_source.volume = float.Parse(m_volumeField.text);
+		audio_source.clip = AudioClip.Create("Generated Clip", (int)length_samples, (int)channels, (int)m_samplesPerSecond, false, on_audio_read, on_audio_set_position);
 		audio_source.Play();
 
 		OSMD_update();

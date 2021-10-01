@@ -74,7 +74,7 @@ namespace CSharpSynth.Sequencer
 		}
 
 		//--Public Methods
-		public MusicSequencer(StreamSynthesizer synth, bool isScale, uint rootNoteIndex, uint scaleIndex)
+		public MusicSequencer(StreamSynthesizer synth, bool isScale, uint noteMin, uint noteMax, uint rootNoteIndex, uint scaleIndex, uint instrumentIndex)
 			: base(synth)
 		{
 			uint timeItr = 0;
@@ -82,13 +82,24 @@ namespace CSharpSynth.Sequencer
 			m_events = new List<MidiEvent>();
 			const uint middleAIndex = 58U;
 			byte note_root = (byte)(middleAIndex + rootNoteIndex);
+			int noteMinRooted = (int)noteMin - note_root;
+			int noteMaxRooted = (int)noteMax - note_root;
 			uint[] scaleSemitones = Audio_scales[scaleIndex];
 			int note_idx = -1;
+
+			// switch to the requested instrument
+			MidiEvent eventSetInstrument = new MidiEvent();
+			eventSetInstrument.deltaTime = timeItr;
+			eventSetInstrument.midiChannelEvent = MidiHelper.MidiChannelEvent.Program_Change;
+			eventSetInstrument.parameter1 = (byte)instrumentIndex;
+			eventSetInstrument.channel = 1;//?
+			m_events.Add(eventSetInstrument);
+
 			while (timeItr < m_timeTotal)
 			{
 				// TODO: other types of events?
 
-				note_idx = (isScale ? note_idx + 1 : (int)UnityEngine.Random.Range(-7, 7));
+				note_idx = (isScale ? note_idx + 1 : (int)UnityEngine.Random.Range(noteMinRooted, noteMaxRooted));
 				byte note_cur = (byte)(note_root + scaleOffset(scaleSemitones, note_idx));
 				uint timeInc = isScale ? m_timeTotal / 8 : (uint)UnityEngine.Random.Range(m_samplesPerSecond / 10, Math.Min(m_samplesPerSecond, m_timeTotal - timeItr));
 				if (timeItr + timeInc > m_timeTotal)
