@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using CSharpSynth.Effects;
 using CSharpSynth.Sequencer;
@@ -9,6 +10,10 @@ using CSharpSynth.Midi;
 [RequireComponent(typeof(AudioSource))]
 public class PlayMusic : MonoBehaviour
 {
+	// see Plugins/OSMD_bridge/osmd_bridge.jslib
+	[DllImport("__Internal")]
+	private static extern void OSMD_update();
+
 	// Start is called before the first frame update
 	void Start()
 	{
@@ -48,6 +53,8 @@ public class PlayMusic : MonoBehaviour
 		audio_source.volume = float.Parse(m_volume_field.text);
 		audio_source.clip = AudioClip.Create("Generated Clip", (int)length_samples, (int)channels, (int)m_samples_per_second, false, on_audio_read, on_audio_set_position);
 		audio_source.Play();
+
+		OSMD_update();
 	}
 
 	void on_audio_read(float[] data)
