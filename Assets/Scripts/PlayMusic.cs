@@ -12,7 +12,7 @@ public class PlayMusic : MonoBehaviour
 {
 	// see Plugins/OSMD_bridge/osmd_bridge.jslib
 	[DllImport("__Internal")]
-	private static extern void OSMD_update();
+	private static extern void OSMD_update(int bpm, uint[] keys, int key_count);
 
 	public uint m_samplesPerSecond = 44100U;
 	public bool m_stereo = true;
@@ -20,6 +20,7 @@ public class PlayMusic : MonoBehaviour
 
 	public UnityEngine.UI.InputField m_keyMinField;
 	public UnityEngine.UI.InputField m_keyMaxField;
+	public UnityEngine.UI.InputField m_tempoField;
 	public UnityEngine.UI.Dropdown m_rootNoteDropdown;
 	public UnityEngine.UI.Dropdown m_scaleDropdown;
 	public UnityEngine.UI.Dropdown m_instrumentDropdown;
@@ -66,7 +67,8 @@ public class PlayMusic : MonoBehaviour
 		audio_source.clip = AudioClip.Create("Generated Clip", (int)length_samples, (int)channels, (int)m_samplesPerSecond, false, on_audio_read, on_audio_set_position);
 		audio_source.Play();
 
-		OSMD_update();
+		uint[] keySequence = musicSequencer.keySequence;
+		OSMD_update(int.Parse(m_tempoField.text), keySequence, keySequence.Length);
 	}
 
 	void on_audio_read(float[] data)

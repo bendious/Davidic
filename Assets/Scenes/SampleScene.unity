@@ -649,6 +649,7 @@ MonoBehaviour:
   maxPolyphony: 40
   m_keyMinField: {fileID: 515338519}
   m_keyMaxField: {fileID: 1182778172}
+  m_tempoField: {fileID: 1427546522}
   m_rootNoteDropdown: {fileID: 2124416807}
   m_scaleDropdown: {fileID: 2097680790}
   m_instrumentDropdown: {fileID: 381914038}

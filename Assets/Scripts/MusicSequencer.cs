@@ -13,6 +13,7 @@ namespace CSharpSynth.Sequencer
 		private uint m_timeTotal;
 
 		// TODO: convert to MidiFile?
+		private List<uint> m_keys;
 		private List<MidiEvent> m_events;
 		private int eventIndex;
 
@@ -79,9 +80,10 @@ namespace CSharpSynth.Sequencer
 		{
 			uint timeItr = 0;
 			m_timeTotal = (uint)(m_samplesPerSecond * (isScale ? 4.0f : UnityEngine.Random.Range(1.0f, 10.0f)/*TODO*/));
+			m_keys = new List<uint>();
 			m_events = new List<MidiEvent>();
-			const uint middleAIndex = 58U;
-			byte note_root = (byte)(middleAIndex + rootNoteIndex);
+			const uint middleAIndex = 57U;
+			byte note_root = (byte)(middleAIndex + scaleOffset(Audio_natural_minor_scale_semitones, (int)rootNoteIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
 			int noteMinRooted = (int)noteMin - note_root;
 			int noteMaxRooted = (int)noteMax - note_root;
 			uint[] scaleSemitones = Audio_scales[scaleIndex];
@@ -107,6 +109,7 @@ namespace CSharpSynth.Sequencer
 					break;
 				}
 
+				m_keys.Add((uint)note_cur);
 				MidiEvent eventOn = new MidiEvent();
 				eventOn.deltaTime = timeItr;
 				eventOn.midiChannelEvent = MidiHelper.MidiChannelEvent.Note_On;
@@ -176,6 +179,11 @@ namespace CSharpSynth.Sequencer
 		public uint lengthSamples
 		{
 			get { return m_timeTotal; }
+		}
+
+		public uint[] keySequence
+		{
+			get { return m_keys.ToArray(); }
 		}
 	}
 }
