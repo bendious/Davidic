@@ -12,7 +12,7 @@ public class PlayMusic : MonoBehaviour
 {
 	// see Plugins/OSMD_bridge/osmd_bridge.jslib
 	[DllImport("__Internal")]
-	private static extern void OSMD_update(int bpm, uint[] keys, int key_count);
+	private static extern void OSMD_update(uint bpm, uint[] keys, uint[] lengths, int key_count);
 
 	public uint m_samplesPerSecond = 44100U;
 	public bool m_stereo = true;
@@ -57,8 +57,9 @@ public class PlayMusic : MonoBehaviour
 	public void playMusic(bool isScale)
 	{
 		uint channels = (m_stereo ? 2U : 1U);
+		uint bpm = uint.Parse(m_tempoField.text);
 
-		musicSequencer = new MusicSequencer(musicStreamSynthesizer, isScale, uint.Parse(m_keyMinField.text), uint.Parse(m_keyMaxField.text), (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)m_instrumentDropdown.value);
+		musicSequencer = new MusicSequencer(musicStreamSynthesizer, isScale, uint.Parse(m_keyMinField.text), uint.Parse(m_keyMaxField.text), (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)m_instrumentDropdown.value, bpm);
 
 		uint length_samples = musicSequencer.lengthSamples;
 
@@ -68,7 +69,9 @@ public class PlayMusic : MonoBehaviour
 		audio_source.Play();
 
 		uint[] keySequence = musicSequencer.keySequence;
-		OSMD_update(int.Parse(m_tempoField.text), keySequence, keySequence.Length);
+		uint[] lengthSequence = musicSequencer.lengthSequence;
+		Debug.Assert(keySequence.Length == lengthSequence.Length);
+		OSMD_update(bpm, keySequence, lengthSequence, lengthSequence.Length);
 	}
 
 	void on_audio_read(float[] data)

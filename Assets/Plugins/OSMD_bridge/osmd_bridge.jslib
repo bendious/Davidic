@@ -1,5 +1,5 @@
 mergeInto(LibraryManager.library, {
-	OSMD_update: function (bpm, keys, key_count) {
+	OSMD_update: function (bpm, keys, lengths, key_count) {
 		// create OSMD instance if first call
 		if (document.osmd == null) {
 			document.osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay("osmd", { drawingParameters: "compacttight" });
@@ -94,6 +94,7 @@ mergeInto(LibraryManager.library, {
 			const keys_per_octave = 7;
 			console.assert(semitones_from_c.length == keys_per_octave);
 			var key_val = HEAPU32[(keys >> 2) + i]; // see https://docs.unity3d.com/Manual/webgl-interactingwithbrowserscripting.html
+			var length_val = HEAPU32[(lengths >> 2) + i];
 			var note_semitones_from_c = key_val % semitones_per_octave;
 			var note_val = semitones_from_c.indexOf(note_semitones_from_c);
 			var semitone_offset = 0;
@@ -110,12 +111,12 @@ mergeInto(LibraryManager.library, {
 					  <alter>' + semitone_offset + '</alter>\
 					  <octave>' + note_octave + '</octave>\
 					</pitch>\
-					<duration>64</duration>\
+					<duration>' + length_val + '</duration>\
 					<voice>1</voice>\
-					<type>quarter</type>\
+					<type>' + (length_val == 1 ? '64th' : length_val == 2 ? '32nd' : length_val == 4 ? '16th' : length_val == 8 ? 'eighth' : length_val == 16 ? 'quarter' : length_val == 32 ? 'half' : length_val == 64 ? 'whole' : '') + '</type>\
 					<accidental>' + (semitone_offset > 0 ? 'sharp' : semitone_offset < 0 ? 'flat' : '')/*TODO: account for key signature*/ + '</accidental>\
 				  </note>';
-			// TODO: actual durations/types, <beam>/<chord/>/<dot/>/<{p/mp/mf/f}/>
+			// TODO: <beam>/<chord/>/<dot/>/<{p/mp/mf/f}/>
 		}
 
 		// MusicXML footer
