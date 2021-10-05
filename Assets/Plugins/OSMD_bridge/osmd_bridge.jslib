@@ -80,6 +80,8 @@ mergeInto(LibraryManager.library, {
 
 		// convert key array into MusicXML
 		const notes_per_measure = 4; // TODO: account for note types and time signatures
+		var length_val_prev = 0;
+		var type_str = '';
 		for (var i = 0; i < key_count; ++i) {
 			// measure bar if appropriate
 			if (i > 0 && i % notes_per_measure == 0) {
@@ -104,19 +106,22 @@ mergeInto(LibraryManager.library, {
 			}
 			var note_letter = String.fromCharCode(((note_val + 2) % keys_per_octave) + 'A'.charCodeAt(0)); // see https://stackoverflow.com/questions/36129721/convert-number-to-alphabet-letter
 			var note_octave = key_val / semitones_per_octave - 1; // NOTE offset: middle-C (MIDI key 60) in MusicXML is the start of octave 4 rather than 5
+			type_str = (length_val == 1 ? '64th' : length_val == 2 ? '32nd' : length_val == 4 ? '16th' : length_val == 8 ? 'eighth' : length_val == 16 ? 'quarter' : length_val == 32 ? 'half' : length_val == 64 ? 'whole' : type_str); // note that length_val of 0 is used for subsequent chord notes, in which case we just reuse the previous type
 			xml_str += '\
 				  <note>\
+					' + (length_val == 0 ? '<chord/>' : '') + '\
 					<pitch>\
 					  <step>' + note_letter + '</step>\
 					  <alter>' + semitone_offset + '</alter>\
 					  <octave>' + note_octave + '</octave>\
 					</pitch>\
-					<duration>' + length_val + '</duration>\
+					<duration>' + (length_val == 0 ? length_val_prev : length_val) + '</duration>\
 					<voice>1</voice>\
-					<type>' + (length_val == 1 ? '64th' : length_val == 2 ? '32nd' : length_val == 4 ? '16th' : length_val == 8 ? 'eighth' : length_val == 16 ? 'quarter' : length_val == 32 ? 'half' : length_val == 64 ? 'whole' : '') + '</type>\
+					<type>' + type_str + '</type>\
 					<accidental>' + (semitone_offset > 0 ? 'sharp' : semitone_offset < 0 ? 'flat' : '')/*TODO: account for key signature*/ + '</accidental>\
 				  </note>';
-			// TODO: <beam>/<chord/>/<dot/>/<{p/mp/mf/f}/>
+			// TODO: <beam>/<dot/>/<{p/mp/mf/f}/>
+			length_val_prev = length_val;
 		}
 
 		// MusicXML footer
