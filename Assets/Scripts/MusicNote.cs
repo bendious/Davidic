@@ -34,8 +34,9 @@ public class MusicNote
 		get { return m_volumePct; }
 	}
 
-	public void toMidiEvents(uint rootNote, uint[] scaleSemitones, ref List<uint> keys, ref List<uint> lengths, uint timeStart, uint timeInc, ref List<MidiEvent> events)
+	public void toMidiEvents(uint rootNote, uint[] scaleSemitones, ref List<uint> keys, ref List<uint> lengths, uint startSixtyFourths, uint samplesPerSixtyFourth, ref List<MidiEvent> events)
 	{
+		uint startSample = startSixtyFourths * samplesPerSixtyFourth;
 		foreach (float index in m_chordIndices)
 		{
 			uint keyCur = chordIndexToMidiKey(index, rootNote, scaleSemitones);
@@ -44,7 +45,7 @@ public class MusicNote
 			lengths.Add(0); // in order to more easily format chords for display w/ MusicXML's <chord/> convention of attaching to the previous note, we put the length in only the first chord note; see below
 
 			MidiEvent eventOn = new MidiEvent();
-			eventOn.deltaTime = timeStart;
+			eventOn.deltaTime = startSample;
 			eventOn.midiChannelEvent = MidiHelper.MidiChannelEvent.Note_On;
 			eventOn.parameter1 = (byte)keyCur;
 			eventOn.parameter2 = (byte)(m_volumePct * 100); // velocity
@@ -53,13 +54,13 @@ public class MusicNote
 		}
 		lengths[lengths.Count - m_chordIndices.Length] = m_lengthSixtyFourths;
 
+		uint endSample = (startSixtyFourths + m_lengthSixtyFourths) * samplesPerSixtyFourth;
 		foreach (float index in m_chordIndices)
 		{
 			MidiEvent eventOff = new MidiEvent();
-			eventOff.deltaTime = timeStart + timeInc;
+			eventOff.deltaTime = endSample;
 			eventOff.midiChannelEvent = MidiHelper.MidiChannelEvent.Note_Off;
 			eventOff.parameter1 = (byte)chordIndexToMidiKey(index, rootNote, scaleSemitones);
-			eventOff.parameter2 = (byte)UnityEngine.Random.Range(75U, 125U); // velocity
 			eventOff.channel = 0;
 			events.Add(eventOff);
 		}

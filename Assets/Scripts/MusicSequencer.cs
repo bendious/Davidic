@@ -9,7 +9,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 {
 	private int m_sampleTime = 0;
 	private uint m_samplesPerSecond = 44100;
-	private uint m_timeTotal;
+	private uint m_samplesTotal;
 
 	// TODO: convert to MidiFile?
 	private List<MusicNote> m_notes;
@@ -23,49 +23,44 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	public MusicSequencer(StreamSynthesizer synth, bool isScale, uint keyMin, uint keyMax, uint rootKeyIndex, uint scaleIndex, uint instrumentIndex, uint bpm)
 		: base(synth)
 	{
-		uint timeItr = 0;
-		uint measureCount = (isScale ? 1U : (uint)UnityEngine.Random.Range(1, 5)/*TODO*/);
-		const uint beatsPerMeasure = 4U; // TODO
+		const uint sixtyfourthsPerMeasure = 64U;
 		const uint sixtyFourthsPerBeat = 16U; // TODO
-		uint beatsTotal = beatsPerMeasure * measureCount;
-		uint lengthItr = 0U;
-		uint samplesPerBeat = m_samplesPerSecond * MusicUtility.secondsPerMinute / bpm;
-		m_timeTotal = samplesPerBeat * beatsTotal;
+
 		m_notes = new List<MusicNote>();
 		m_keys = new List<uint>();
 		m_lengths = new List<uint>();
 		m_events = new List<MidiEvent>();
+
+		uint samplesPerSixtyFourth = m_samplesPerSecond * MusicUtility.secondsPerMinute / bpm / sixtyFourthsPerBeat;
+		uint measureCount = (isScale ? 1U : (uint)UnityEngine.Random.Range(1, 5)/*TODO*/);
+		uint sixtyfourthsTotal = sixtyfourthsPerMeasure * measureCount;
+		m_samplesTotal = samplesPerSixtyFourth * sixtyfourthsTotal;
+
 		byte keyRoot = (byte)(MusicUtility.midiMiddleAKey + MusicUtility.scaleOffset(MusicUtility.naturalMinorScaleSemitones, (int)rootKeyIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
 		int keyMinRooted = (int)keyMin - keyRoot;
 		int keyMaxRooted = (int)keyMax - keyRoot;
 		uint[] scaleSemitones = MusicUtility.scales[scaleIndex];
-		int chordIdx = -1;
-		uint samplesPerSixtyFourth = m_samplesPerSecond / bpm / sixtyFourthsPerBeat * MusicUtility.secondsPerMinute;
 
 		// switch to the requested instrument
 		MidiEvent eventSetInstrument = new MidiEvent();
-		eventSetInstrument.deltaTime = timeItr;
+		eventSetInstrument.deltaTime = 0;
 		eventSetInstrument.midiChannelEvent = MidiHelper.MidiChannelEvent.Program_Change;
 		eventSetInstrument.parameter1 = (byte)instrumentIndex;
 		eventSetInstrument.channel = 0; // TODO
 		m_events.Add(eventSetInstrument);
 
-		while (timeItr < m_timeTotal)
+		uint sixtyFourthsItr = 0U;
+		int chordIdx = -1;
+		while (sixtyFourthsItr < sixtyfourthsTotal)
 		{
 			chordIdx = (isScale ? chordIdx + 1 : (int)UnityEngine.Random.Range(keyMinRooted, keyMaxRooted));
-			uint sixtyFourthsCur = isScale ? sixtyFourthsPerBeat / 2U : (uint)(1 << (int)UnityEngine.Random.Range(0, Math.Min(6, beatsTotal * sixtyFourthsPerBeat - lengthItr))); // TODO: better capping at max measure end
-			uint timeInc = samplesPerSixtyFourth * sixtyFourthsCur;
-			if (timeItr + timeInc > m_timeTotal)
-			{
-				break;
-			}
+			uint sixtyFourthsCur = isScale ? sixtyFourthsPerBeat / 2U : (uint)(1 << (int)UnityEngine.Random.Range(0, Math.Min(6, sixtyfourthsTotal - sixtyFourthsItr))); // TODO: better capping at max measure end
 
 			MusicNote noteNew = new MusicNote(new float[] { 0.0f, 1.0f }, sixtyFourthsCur, UnityEngine.Random.Range(0.5f, 1.0f), new float[] { chordIdx, chordIdx + 2.0f }); // TODO: actual chords, coherent volume
-			noteNew.toMidiEvents(keyRoot, scaleSemitones, ref m_keys, ref m_lengths, timeItr, timeInc, ref m_events);
+			noteNew.toMidiEvents(keyRoot, scaleSemitones, ref m_keys, ref m_lengths, sixtyFourthsItr, samplesPerSixtyFourth, ref m_events);
 			m_notes.Add(noteNew);
 
-			timeItr += timeInc;
-			lengthItr += noteNew.length;
+			sixtyFourthsItr += noteNew.length;
 		}
 	}
 
@@ -79,7 +74,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		CSharpSynth.Sequencer.MidiSequencerEvent seqEvt = new CSharpSynth.Sequencer.MidiSequencerEvent();
 
 		// stop or loop
-		if (m_sampleTime >= (int)m_timeTotal)
+		if (m_sampleTime >= (int)m_samplesTotal)
 		{
 			m_sampleTime = 0;
 			return null;
@@ -100,7 +95,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 	public uint lengthSamples
 	{
-		get { return m_timeTotal; }
+		get { return m_samplesTotal; }
 	}
 
 	public uint[] keySequence
