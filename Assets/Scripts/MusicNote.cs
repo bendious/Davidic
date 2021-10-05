@@ -66,42 +66,16 @@ public class MusicNote
 	}
 
 
-	private float modulo(float x, float m)
-	{
-		float r = x % m;
-		return (r < 0) ? r + m : r;
-	}
-
-	private float fract(float x)
-	{
-		return x - (float)Math.Truncate(x);
-	}
-
-	const uint semitonesPerOctave = 12U;
-
-	private int tonesToSemitones(float tonesFromRoot, uint[] scaleSemitones)
-	{
-		// NOTE that due to note averaging for off-chord notes, tonesFromRoot can have unexpected fractional values, so we "round" to the nearest half tone to turn them into standard naturals/flats/sharps
-		float scaleLength = scaleSemitones.Length;
-		float tonesMod = modulo(tonesFromRoot, scaleLength);
-		Debug.Assert(tonesMod >= 0.0f && tonesMod < scaleLength);
-		int octaveOffset = (int)(tonesFromRoot / scaleLength) + (tonesFromRoot < 0.0f ? -1 : 0);
-		float fractAbs = Mathf.Abs(fract(tonesFromRoot));
-		int halftoneOffset = (fractAbs <= 0.333f || fractAbs >= 0.667f) ? 0 : (tonesFromRoot < 0.0f ? -1 : 1);
-
-		return (int)(scaleSemitones[(uint)tonesMod] + octaveOffset * (int)semitonesPerOctave + halftoneOffset);
-	}
-
 	private uint chordIndexToMidiKey(float index, uint rootNote, uint[] scaleSemitones)
 	{
 		float chordSizeF = (float)m_chord.Length;
 		Debug.Assert(chordSizeF > 0.0f);
-		float indexMod = modulo(index, chordSizeF);
+		float indexMod = Utility.modulo(index, chordSizeF);
 		Debug.Assert(indexMod < chordSizeF);
 		int octaveOffset = (int)(index / chordSizeF) + (index < 0.0f ? -1 : 0);
-		float indexFractAbs = Mathf.Abs(fract(index));
+		float indexFractAbs = Mathf.Abs(Utility.fract(index));
 		float tonePreOctave = (indexFractAbs <= 0.333f || indexFractAbs >= 0.667f) ? m_chord[(uint)Mathf.Round(indexMod)] : (m_chord[(int)Mathf.Floor(indexMod)] + m_chord[(int)Math.Ceiling(indexMod)]) * 0.5f; // TODO: better way of picking off-chord notes?
-		int totalOffset = tonesToSemitones(tonePreOctave, scaleSemitones) + octaveOffset * (int)semitonesPerOctave;
+		int totalOffset = MusicUtility.tonesToSemitones(tonePreOctave, scaleSemitones) + octaveOffset * (int)MusicUtility.semitonesPerOctave;
 		return (uint)((int)rootNote + totalOffset);
 	}
 }

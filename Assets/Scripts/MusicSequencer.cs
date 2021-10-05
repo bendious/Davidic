@@ -18,63 +18,6 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	private List<MidiEvent> m_events;
 	private int m_eventIndex;
 
-	const uint semitonesPerOctave = 12U;
-
-	private static uint[] m_majorScaleSemitones = {
-		0, 2, 4, 5, 7, 9, 11
-	};
-	private static uint[] m_naturalMinorScaleSemitones = {
-		0, 2, 3, 5, 7, 8, 10
-	};
-	private static uint[] m_harmonicMinorScaleSemitones = {
-		0, 2, 3, 5, 7, 8, 11
-	};
-	//private static uint[] m_melodicMinorScaleSemitones = {
-	//	0, 2, 3, 5, 7, 9, 11 ascending
-	//	0, 2, 3, 5, 7, 8, 10 descending
-	//};
-	private static uint[] m_dorianModeSemitones = {
-		0, 2, 3, 5, 7, 9, 10
-	};
-	// Ionian mode is the same as the major scale
-	private static uint[] m_phrygianModeSemitones = {
-		0, 1, 3, 5, 7, 8, 10
-	};
-	private static uint[] m_lydianModeSemitones = {
-		0, 2, 4, 6, 7, 9, 11
-	};
-	private static uint[] m_mixolydianModeSemitones = {
-		0, 2, 4, 5, 7, 9, 10
-	};
-	// Aeolian mode is the same as natural minor scale
-	private static uint[] m_locrianModeSemitones = {
-		0, 1, 3, 5, 6, 8, 10
-	};
-	private static uint[][] m_scales = {
-		m_majorScaleSemitones,
-		m_naturalMinorScaleSemitones,
-		m_harmonicMinorScaleSemitones,
-		//m_melodicMinorScaleSemitones,
-		m_dorianModeSemitones,
-		m_phrygianModeSemitones,
-		m_lydianModeSemitones,
-		m_mixolydianModeSemitones,
-		m_locrianModeSemitones
-	};
-
-	private int mod(int x, int m)
-	{
-		int r = x % m;
-		return (r < 0) ? r + m : r;
-	}
-
-	private int scaleOffset(uint[] scaleSemitones, int noteIndex)
-	{
-		int scaleLength = scaleSemitones.Length;
-		int octaveOffset = noteIndex / scaleLength - (noteIndex < 0 ? 1 : 0);
-		return octaveOffset * (int)semitonesPerOctave + (int)scaleSemitones[mod(noteIndex, scaleLength)];
-	}
-
 
 	//--Public Methods
 	public MusicSequencer(StreamSynthesizer synth, bool isScale, uint keyMin, uint keyMax, uint rootKeyIndex, uint scaleIndex, uint instrumentIndex, uint bpm)
@@ -83,23 +26,21 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		uint timeItr = 0;
 		uint measureCount = (isScale ? 1U : (uint)UnityEngine.Random.Range(1, 5)/*TODO*/);
 		const uint beatsPerMeasure = 4U; // TODO
-		const uint secondsPerMinute = 60U;
 		const uint sixtyFourthsPerBeat = 16U; // TODO
 		uint beatsTotal = beatsPerMeasure * measureCount;
 		uint lengthItr = 0U;
-		uint samplesPerBeat = m_samplesPerSecond * secondsPerMinute / bpm;
+		uint samplesPerBeat = m_samplesPerSecond * MusicUtility.secondsPerMinute / bpm;
 		m_timeTotal = samplesPerBeat * beatsTotal;
 		m_notes = new List<MusicNote>();
 		m_keys = new List<uint>();
 		m_lengths = new List<uint>();
 		m_events = new List<MidiEvent>();
-		const uint middleAIndex = 57U;
-		byte keyRoot = (byte)(middleAIndex + scaleOffset(m_naturalMinorScaleSemitones, (int)rootKeyIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
+		byte keyRoot = (byte)(MusicUtility.midiMiddleAKey + MusicUtility.scaleOffset(MusicUtility.naturalMinorScaleSemitones, (int)rootKeyIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
 		int keyMinRooted = (int)keyMin - keyRoot;
 		int keyMaxRooted = (int)keyMax - keyRoot;
-		uint[] scaleSemitones = m_scales[scaleIndex];
+		uint[] scaleSemitones = MusicUtility.scales[scaleIndex];
 		int chordIdx = -1;
-		uint samplesPerSixtyFourth = m_samplesPerSecond / bpm / sixtyFourthsPerBeat * secondsPerMinute;
+		uint samplesPerSixtyFourth = m_samplesPerSecond / bpm / sixtyFourthsPerBeat * MusicUtility.secondsPerMinute;
 
 		// switch to the requested instrument
 		MidiEvent eventSetInstrument = new MidiEvent();
@@ -117,7 +58,6 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 			if (timeItr + timeInc > m_timeTotal)
 			{
 				break;
-
 			}
 
 			MusicNote noteNew = new MusicNote(new float[] { 0.0f, 1.0f }, sixtyFourthsCur, UnityEngine.Random.Range(0.5f, 1.0f), new float[] { chordIdx, chordIdx + 2.0f }); // TODO: actual chords, coherent volume
