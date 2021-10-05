@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 using CSharpSynth.Midi;
 
 public class MusicNote
@@ -70,9 +71,9 @@ public class MusicNote
 	private uint chordIndexToMidiKey(float index, uint rootNote, uint[] scaleSemitones)
 	{
 		float chordSizeF = (float)m_chord.Length;
-		Debug.Assert(chordSizeF > 0.0f);
+		Assert.IsTrue(chordSizeF > 0.0f);
 		float indexMod = Utility.modulo(index, chordSizeF);
-		Debug.Assert(indexMod < chordSizeF);
+		Assert.IsTrue(indexMod < chordSizeF);
 		int octaveOffset = (int)(index / chordSizeF) + (index < 0.0f ? -1 : 0);
 		float indexFractAbs = Mathf.Abs(Utility.fract(index));
 		float tonePreOctave = (indexFractAbs <= 0.333f || indexFractAbs >= 0.667f) ? m_chord[(uint)Mathf.Round(indexMod)] : (m_chord[(int)Mathf.Floor(indexMod)] + m_chord[(int)Math.Ceiling(indexMod)]) * 0.5f; // TODO: better way of picking off-chord notes?

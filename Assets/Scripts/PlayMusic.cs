@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.Assertions;
 using CSharpSynth.Effects;
 using CSharpSynth.Sequencer;
 using CSharpSynth.Synthesis;
@@ -10,9 +11,12 @@ using CSharpSynth.Midi;
 [RequireComponent(typeof(AudioSource))]
 public class PlayMusic : MonoBehaviour
 {
+#if UNITY_EDITOR
+#else
 	// see Plugins/OSMD_bridge/osmd_bridge.jslib
 	[DllImport("__Internal")]
 	private static extern void OSMD_update(uint bpm, uint[] keys, uint[] lengths, int key_count);
+#endif
 
 	public uint m_samplesPerSecond = 44100U;
 	public bool m_stereo = true;
@@ -70,8 +74,12 @@ public class PlayMusic : MonoBehaviour
 
 		uint[] keySequence = musicSequencer.keySequence;
 		uint[] lengthSequence = musicSequencer.lengthSequence;
-		Debug.Assert(keySequence.Length == lengthSequence.Length);
+		Assert.AreEqual(keySequence.Length, lengthSequence.Length);
+#if UNITY_EDITOR
+		// TODO: find way to display music w/o embedded webpage?
+#else
 		OSMD_update(bpm, keySequence, lengthSequence, lengthSequence.Length);
+#endif
 	}
 
 	void on_audio_read(float[] data)
