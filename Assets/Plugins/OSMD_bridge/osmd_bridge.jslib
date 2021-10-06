@@ -1,5 +1,9 @@
 mergeInto(LibraryManager.library, {
 	OSMD_update: function (bpm, keys, lengths, key_count) {
+		var inputArrayUint = function (array, index) {
+			return HEAPU32[(array >> 2) + index]; // see https://docs.unity3d.com/Manual/webgl-interactingwithbrowserscripting.html
+		};
+
 		// create OSMD instance if first call
 		if (document.osmd == null) {
 			document.osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay("osmd", { drawingParameters: "compacttight" });
@@ -51,8 +55,8 @@ mergeInto(LibraryManager.library, {
 		var length_val_prev = 0;
 		var type_str = '';
 		for (var i = 0; i < key_count; ++i) {
-			var key_val = HEAPU32[(keys >> 2) + i]; // see https://docs.unity3d.com/Manual/webgl-interactingwithbrowserscripting.html
-			var length_val = HEAPU32[(lengths >> 2) + i];
+			var key_val = inputArrayUint(keys, i);
+			var length_val = inputArrayUint(lengths, i);
 			console.log("key " + key_val + ", length " + length_val); // TEMP?
 
 			// measure bar if appropriate
