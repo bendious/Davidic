@@ -31,6 +31,8 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		m_lengths = new List<uint>();
 		m_events = new List<MidiEvent>();
 
+		synth.NoteOffAll(true); // prevent orphaned notes playing forever
+
 		uint samplesPerSixtyFourth = m_samplesPerSecond * MusicUtility.secondsPerMinute / bpm / sixtyFourthsPerBeat;
 		uint measureCount = (isScale ? 1U : (uint)UnityEngine.Random.Range(1, 5)/*TODO*/);
 		uint sixtyfourthsTotal = sixtyfourthsPerMeasure * measureCount;
