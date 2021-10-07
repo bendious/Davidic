@@ -12,10 +12,11 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	private uint m_samplesTotal;
 
 	// TODO: convert to MidiFile?
-	private List<MusicNote> m_notes;
-	private List<uint> m_keys;
-	private List<uint> m_lengths; // measured in sixty-fourth notes
+	private MusicBlock m_notes;
 	private List<MidiEvent> m_events;
+	private uint m_rootKey;
+	private uint[] m_scaleSemitones;
+
 	private int m_eventIndex;
 
 
@@ -26,9 +27,6 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		const uint sixtyfourthsPerMeasure = 64U;
 		const uint sixtyFourthsPerBeat = 16U; // TODO
 
-		m_notes = new List<MusicNote>();
-		m_keys = new List<uint>();
-		m_lengths = new List<uint>();
 		m_events = new List<MidiEvent>();
 
 		synth.NoteOffAll(true); // prevent orphaned notes playing forever
@@ -38,10 +36,10 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		uint sixtyfourthsTotal = sixtyfourthsPerMeasure * measureCount;
 		m_samplesTotal = samplesPerSixtyFourth * sixtyfourthsTotal;
 
-		byte keyRoot = (byte)(MusicUtility.midiMiddleAKey + MusicUtility.scaleOffset(MusicUtility.naturalMinorScaleSemitones, (int)rootKeyIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
-		int keyMinRooted = (int)keyMin - keyRoot;
-		int keyMaxRooted = (int)keyMax - keyRoot;
-		uint[] scaleSemitones = MusicUtility.scales[scaleIndex];
+		m_rootKey = (uint)(MusicUtility.midiMiddleAKey + MusicUtility.scaleOffset(MusicUtility.naturalMinorScaleSemitones, (int)rootKeyIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
+		int keyMinRooted = (int)keyMin - (int)m_rootKey;
+		int keyMaxRooted = (int)keyMax - (int)m_rootKey;
+		m_scaleSemitones = MusicUtility.scales[scaleIndex];
 
 		// switch to the requested instrument
 		MidiEvent eventSetInstrument = new MidiEvent();
@@ -53,17 +51,19 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 		uint sixtyFourthsItr = 0U;
 		int chordIdx = -1;
+		List<MusicNote> notesTemp = new List<MusicNote>();
 		while (sixtyFourthsItr < sixtyfourthsTotal)
 		{
 			chordIdx = (isScale ? chordIdx + 1 : (int)UnityEngine.Random.Range(keyMinRooted, keyMaxRooted));
 			uint sixtyFourthsCur = isScale ? sixtyFourthsPerBeat / 2U : (uint)(1 << (int)UnityEngine.Random.Range(0, Math.Min(6, sixtyfourthsTotal - sixtyFourthsItr))); // TODO: better capping at max measure end
 
 			MusicNote noteNew = new MusicNote(new float[] { 0.0f, 1.0f }, sixtyFourthsCur, UnityEngine.Random.Range(0.5f, 1.0f), new float[] { chordIdx, chordIdx + 2.0f }); // TODO: actual chords, coherent volume
-			noteNew.toMidiEvents(keyRoot, scaleSemitones, ref m_keys, ref m_lengths, sixtyFourthsItr, samplesPerSixtyFourth, ref m_events);
-			m_notes.Add(noteNew);
+			noteNew.toMidiEvents(m_rootKey, m_scaleSemitones, sixtyFourthsItr, samplesPerSixtyFourth, ref m_events);
+			notesTemp.Add(noteNew);
 
 			sixtyFourthsItr += noteNew.length;
 		}
+		m_notes = new MusicBlock(notesTemp.ToArray());
 	}
 
 	public override bool isPlaying
@@ -102,11 +102,11 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 	public uint[] keySequence
 	{
-		get { return m_keys.ToArray(); }
+		get { return m_notes.getKeys(m_rootKey, m_scaleSemitones); }
 	}
 
 	public uint[] lengthSequence
 	{
-		get { return m_lengths.ToArray(); }
+		get { return m_notes.getLengths(); }
 	}
 }

@@ -14,15 +14,21 @@ public class MusicNote
 
 	public MusicNote(float[] chordIndices, uint lengthSixtyFourths, float volumePct, float[] chord)
 	{
+		// TODO: check for / remove chord/index duplicates?
 		m_chordIndices = chordIndices;
 		m_lengthSixtyFourths = lengthSixtyFourths;
 		m_volumePct = volumePct;
 		m_chord = chord;
 	}
 
-	public float[] chordIndices
+	public uint[] midiKeys(uint rootKey, uint[] scaleSemitones)
 	{
-		get { return m_chordIndices; }
+		return Array.ConvertAll(m_chordIndices, (float index) => chordIndexToMidiKey(index, rootKey, scaleSemitones));
+	}
+
+	public uint keyCount
+	{
+		get { return (uint)m_chordIndices.Length; }
 	}
 
 	public uint length
@@ -35,15 +41,12 @@ public class MusicNote
 		get { return m_volumePct; }
 	}
 
-	public void toMidiEvents(uint rootNote, uint[] scaleSemitones, ref List<uint> keys, ref List<uint> lengths, uint startSixtyFourths, uint samplesPerSixtyFourth, ref List<MidiEvent> events)
+	public void toMidiEvents(uint rootNote, uint[] scaleSemitones, uint startSixtyFourths, uint samplesPerSixtyFourth, ref List<MidiEvent> events)
 	{
 		uint startSample = startSixtyFourths * samplesPerSixtyFourth;
 		foreach (float index in m_chordIndices)
 		{
 			uint keyCur = chordIndexToMidiKey(index, rootNote, scaleSemitones);
-
-			keys.Add(keyCur);
-			lengths.Add(0); // in order to more easily format chords for display w/ MusicXML's <chord/> convention of attaching to the previous note, we put the length in only the first chord note; see below
 
 			MidiEvent eventOn = new MidiEvent();
 			eventOn.deltaTime = startSample;
@@ -53,7 +56,6 @@ public class MusicNote
 			eventOn.channel = 0;
 			events.Add(eventOn);
 		}
-		lengths[lengths.Count - m_chordIndices.Length] = m_lengthSixtyFourths;
 
 		uint endSample = (startSixtyFourths + m_lengthSixtyFourths) * samplesPerSixtyFourth;
 		foreach (float index in m_chordIndices)
