@@ -1,7 +1,7 @@
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using CSharpSynth.Midi;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 
 public class MusicBlockRepeat : MusicBlock
@@ -16,40 +16,40 @@ public class MusicBlockRepeat : MusicBlock
 		m_schedule = schedule;
 	}
 
-	public override uint sixtyFourthsTotal()
+	public override uint SixtyFourthsTotal()
 	{
-		return (uint)Enumerable.Sum(Array.ConvertAll(CombineViaSchedule((MusicBlock block) => new List<uint> { block.sixtyFourthsTotal() }), (uint unsigned) => (int)unsigned));
+		return CombineViaSchedule((MusicBlock block) => new List<uint> { block.SixtyFourthsTotal() }).Aggregate((uint a, uint b) => a + b);
 	}
 
-	public override uint[] getKeys(uint rootKey, uint[] scaleSemitones)
+	public override List<uint> GetKeys(uint rootKey, uint[] scaleSemitones)
 	{
-		return CombineViaSchedule((MusicBlock block) => new List<uint>(block.getKeys(rootKey, scaleSemitones)));
+		return CombineViaSchedule((MusicBlock block) => new List<uint>(block.GetKeys(rootKey, scaleSemitones)));
 	}
 
-	public override uint[] getLengths()
+	public override List<uint> GetLengths()
 	{
-		return CombineViaSchedule((MusicBlock block) => new List<uint>(block.getLengths()));
+		return CombineViaSchedule((MusicBlock block) => new List<uint>(block.GetLengths()));
 	}
 
-	public override MidiEvent[] toMidiEvents(uint startSixtyFourths, uint rootKey, uint[] scaleSemitones, uint samplesPerSixtyFourth)
+	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, uint[] scaleSemitones, uint samplesPerSixtyFourth)
 	{
 		uint sixtyFourthsItr = startSixtyFourths;
 		return CombineViaSchedule((MusicBlock block) => {
-			List<MidiEvent> list = new List<MidiEvent>(block.toMidiEvents(sixtyFourthsItr, rootKey, scaleSemitones, samplesPerSixtyFourth));
-			sixtyFourthsItr += block.sixtyFourthsTotal();
+			List<MidiEvent> list = new List<MidiEvent>(block.ToMidiEvents(sixtyFourthsItr, rootKey, scaleSemitones, samplesPerSixtyFourth));
+			sixtyFourthsItr += block.SixtyFourthsTotal();
 			return list;
 		});
 	}
 
 
-	private T[] CombineViaSchedule<T>(Func<MusicBlock, List<T>> blockFunc)
+	private List<T> CombineViaSchedule<T>(Func<MusicBlock, List<T>> blockFunc)
 	{
-		List<T> list = new List<T>(); // TODO: less array/list interconversion?
+		List<T> list = new List<T>();
 		foreach (uint index in m_schedule)
 		{
 			MusicBlock childBlock = m_children[index];
 			list.AddRange(blockFunc(childBlock));
 		}
-		return list.ToArray();
+		return list;
 	}
 }

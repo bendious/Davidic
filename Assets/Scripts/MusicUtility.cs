@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -53,21 +52,21 @@ public static class MusicUtility
 	};
 
 
-	public static int scaleOffset(uint[] scaleSemitones, int noteIndex)
+	public static int ScaleOffset(uint[] scaleSemitones, int noteIndex)
 	{
 		int scaleLength = scaleSemitones.Length;
 		int octaveOffset = noteIndex / scaleLength - (noteIndex < 0 ? 1 : 0);
-		return octaveOffset * (int)MusicUtility.semitonesPerOctave + (int)scaleSemitones[Utility.modulo(noteIndex, scaleLength)];
+		return octaveOffset * (int)MusicUtility.semitonesPerOctave + (int)scaleSemitones[Utility.Modulo(noteIndex, scaleLength)];
 	}
 
-	public static int tonesToSemitones(float tonesFromRoot, uint[] scaleSemitones)
+	public static int TonesToSemitones(float tonesFromRoot, uint[] scaleSemitones)
 	{
 		// NOTE that due to note averaging for off-chord notes, tonesFromRoot can have unexpected fractional values, so we "round" to the nearest half tone to turn them into standard naturals/flats/sharps
 		float scaleLength = scaleSemitones.Length;
-		float tonesMod = Utility.modulo(tonesFromRoot, scaleLength);
+		float tonesMod = Utility.Modulo(tonesFromRoot, scaleLength);
 		Assert.IsTrue(tonesMod >= 0.0f && tonesMod < scaleLength);
 		int octaveOffset = (int)(tonesFromRoot / scaleLength) + (tonesFromRoot < 0.0f ? -1 : 0);
-		float fractAbs = Mathf.Abs(Utility.fract(tonesFromRoot));
+		float fractAbs = Mathf.Abs(Utility.Fract(tonesFromRoot));
 		int halftoneOffset = (fractAbs <= 0.333f || fractAbs >= 0.667f) ? 0 : (tonesFromRoot < 0.0f ? -1 : 1);
 
 		return (int)(scaleSemitones[(uint)tonesMod] + octaveOffset * (int)semitonesPerOctave + halftoneOffset);

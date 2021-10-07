@@ -1,7 +1,7 @@
-using System;
-using System.Collections.Generic;
 using CSharpSynth.Midi;
 using CSharpSynth.Synthesis;
+using System;
+using System.Collections.Generic;
 
 
 public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
@@ -34,7 +34,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		uint measureCount = (isScale ? 1U : (uint)UnityEngine.Random.Range(1, 5)/*TODO*/);
 		uint sixtyfourthsTotal = sixtyfourthsPerMeasure * measureCount;
 
-		m_rootKey = (uint)(MusicUtility.midiMiddleAKey + MusicUtility.scaleOffset(MusicUtility.naturalMinorScaleSemitones, (int)rootKeyIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
+		m_rootKey = (uint)(MusicUtility.midiMiddleAKey + MusicUtility.ScaleOffset(MusicUtility.naturalMinorScaleSemitones, (int)rootKeyIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
 		int keyMinRooted = (int)keyMin - (int)m_rootKey;
 		int keyMaxRooted = (int)keyMax - (int)m_rootKey;
 		m_scaleSemitones = MusicUtility.scales[scaleIndex];
@@ -61,7 +61,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 			MusicNote noteNew = new MusicNote(new float[] { 0.0f, 1.0f }, sixtyFourthsCur, UnityEngine.Random.Range(0.5f, 1.0f), new float[] { chordIdx, chordIdx + 2.0f }); // TODO: actual chords, coherent volume
 			notesTemp.Add(noteNew);
 
-			sixtyFourthsItr += noteNew.length;
+			sixtyFourthsItr += noteNew.LengthSixtyFourths;
 		}
 
 		// organize notes into block(s)
@@ -70,7 +70,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		{
 			m_musicBlock = new MusicBlockRepeat(new MusicBlock[] { m_musicBlock }, new uint[] { 0, 0 }); // TODO: more sophisticated arrangements
 		}
-		m_events.AddRange(m_musicBlock.toMidiEvents(0U, m_rootKey, m_scaleSemitones, m_samplesPerSixtyFourth));
+		m_events.AddRange(m_musicBlock.ToMidiEvents(0U, m_rootKey, m_scaleSemitones, m_samplesPerSixtyFourth));
 	}
 
 	public override bool isPlaying
@@ -83,7 +83,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		CSharpSynth.Sequencer.MidiSequencerEvent seqEvt = new CSharpSynth.Sequencer.MidiSequencerEvent();
 
 		// stop or loop
-		if (m_sampleTime >= (int)lengthSamples)
+		if (m_sampleTime >= (int)LengthSamples)
 		{
 			m_sampleTime = 0;
 			return null;
@@ -102,18 +102,18 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		base.IncrementSampleCounter(amount);
 	}
 
-	public uint lengthSamples
+	public uint LengthSamples
 	{
-		get { return m_musicBlock.sixtyFourthsTotal() * m_samplesPerSixtyFourth; }
+		get { return m_musicBlock.SixtyFourthsTotal() * m_samplesPerSixtyFourth; }
 	}
 
-	public uint[] keySequence
+	public List<uint> KeySequence
 	{
-		get { return m_musicBlock.getKeys(m_rootKey, m_scaleSemitones); }
+		get { return m_musicBlock.GetKeys(m_rootKey, m_scaleSemitones); }
 	}
 
-	public uint[] lengthSequence
+	public List<uint> LengthSequence
 	{
-		get { return m_musicBlock.getLengths(); }
+		get { return m_musicBlock.GetLengths(); }
 	}
 }

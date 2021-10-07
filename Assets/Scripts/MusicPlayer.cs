@@ -8,8 +8,9 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using CSharpSynth.Synthesis;
 
+
 [RequireComponent(typeof(AudioSource))]
-public class PlayMusic : MonoBehaviour
+public class MusicPlayer : MonoBehaviour
 {
 #if UNITY_EDITOR
 	private static void OSMD_update(uint bpm, uint[] keys, uint[] lengths, int key_count)
@@ -100,33 +101,34 @@ public class PlayMusic : MonoBehaviour
 		m_instrumentDropdown.RefreshShownValue();
 	}
 
-	public void playMusic(bool isScale)
+	public void PlayMusic(bool isScale)
 	{
 		uint channels = (m_stereo ? 2U : 1U);
 		uint bpm = uint.Parse(m_tempoField.text);
 
 		musicSequencer = new MusicSequencer(musicStreamSynthesizer, isScale, uint.Parse(m_keyMinField.text), uint.Parse(m_keyMaxField.text), (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)m_instrumentDropdown.value, bpm);
 
-		uint length_samples = musicSequencer.lengthSamples;
+		uint length_samples = musicSequencer.LengthSamples;
 
 		AudioSource audio_source = GetComponent<AudioSource>();
 		audio_source.volume = float.Parse(m_volumeField.text);
-		audio_source.clip = AudioClip.Create("Generated Clip", (int)length_samples, (int)channels, (int)m_samplesPerSecond, false, on_audio_read, on_audio_set_position);
+		audio_source.clip = AudioClip.Create("Generated Clip", (int)length_samples, (int)channels, (int)m_samplesPerSecond, false, OnAudioRead, OnAudioSetPosition);
 		audio_source.Play();
 
-		uint[] keySequence = musicSequencer.keySequence;
-		uint[] lengthSequence = musicSequencer.lengthSequence;
+		uint[] keySequence = musicSequencer.KeySequence.ToArray();
+		uint[] lengthSequence = musicSequencer.LengthSequence.ToArray();
 		Assert.AreEqual(keySequence.Length, lengthSequence.Length);
 		OSMD_update(bpm, keySequence, lengthSequence, lengthSequence.Length);
 	}
 
-	void on_audio_read(float[] data)
+
+	private void OnAudioRead(float[] data)
 	{
 		musicStreamSynthesizer.GetNext(data);
 		// NOTE that we don't increment musicSequencer since musicStreamSynthesizer takes care of that
 	}
 
-	void on_audio_set_position(int new_position)
+	private void OnAudioSetPosition(int new_position)
 	{
 		Debug.Log("new position: " + new_position);
 //TODO		musicSequencer.SetTime(new_position);
