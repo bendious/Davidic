@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Collections.Generic;
 using CSharpSynth.Midi;
 
@@ -14,46 +16,44 @@ public class MusicBlockSimple : MusicBlock
 
 	public override uint sixtyFourthsTotal()
 	{
-		uint sixtyFourthsSum = 0U;
-		foreach (MusicNote note in m_notes)
-		{
-			sixtyFourthsSum += note.length;
-		}
-		return sixtyFourthsSum;
+		return (uint)Enumerable.Sum(Array.ConvertAll(ListFromNotes((MusicNote note) => new List<uint> { note.length }).ToArray(), (uint x) => (int)x));
 	}
 
 	public override uint[] getKeys(uint rootKey, uint[] scaleSemitones)
 	{
-		List<uint> keyList = new List<uint>();
-		foreach (MusicNote note in m_notes)
-		{
-			keyList.AddRange(note.midiKeys(rootKey, scaleSemitones));
-		}
-		return keyList.ToArray();
+		return ListFromNotes((MusicNote note) => new List<uint>(note.midiKeys(rootKey, scaleSemitones))).ToArray();
 	}
 
 	public override uint[] getLengths()
 	{
-		List<uint> lengthList = new List<uint>();
-		foreach (MusicNote note in m_notes)
-		{
-			lengthList.Add(note.length);
+		return ListFromNotes((MusicNote note) => {
+			List<uint> lengthList = new List<uint> { note.length };
 			for (uint i = 1U, n = note.keyCount; i < n; ++i)
 			{
 				lengthList.Add(0U); // in order to more easily format chords for display w/ MusicXML's <chord/> convention of attaching to the previous note (see osmd_bridge.jslib), we put the length in only the first chord note
 			}
-		}
-		return lengthList.ToArray();
+			return lengthList;
+		}).ToArray();
 	}
 
 	public override MidiEvent[] toMidiEvents(uint startSixtyFourths, uint rootKey, uint[] scaleSemitones, uint samplesPerSixtyFourth)
 	{
-		List<MidiEvent> eventList = new List<MidiEvent>();
 		uint sixtyFourthsItr = startSixtyFourths;
+		return ListFromNotes((MusicNote note) => {
+			List<MidiEvent> newEvents = note.toMidiEvents(rootKey, scaleSemitones, sixtyFourthsItr, samplesPerSixtyFourth);
+			sixtyFourthsItr += note.length;
+			return newEvents;
+		}).ToArray();
+	}
+
+
+	private List<T> ListFromNotes<T>(Func<MusicNote, List<T>> noteFunc)
+	{
+		List<T> list = new List<T>();
 		foreach (MusicNote note in m_notes)
 		{
-			eventList.AddRange(note.toMidiEvents(rootKey, scaleSemitones, sixtyFourthsItr, samplesPerSixtyFourth));
-			sixtyFourthsItr += note.length;
+			list.AddRange(noteFunc(note));
 		}
-		return eventList.ToArray();
+		return list;
 	}
+}
