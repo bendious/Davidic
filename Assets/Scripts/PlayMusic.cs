@@ -1,15 +1,12 @@
-using System.Collections;
 using System.Collections.Generic;
 #if UNITY_EDITOR
 using System.IO;
-#endif
+#else
 using System.Runtime.InteropServices;
+#endif
 using UnityEngine;
 using UnityEngine.Assertions;
-using CSharpSynth.Effects;
-using CSharpSynth.Sequencer;
 using CSharpSynth.Synthesis;
-using CSharpSynth.Midi;
 
 [RequireComponent(typeof(AudioSource))]
 public class PlayMusic : MonoBehaviour

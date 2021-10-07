@@ -6,10 +6,10 @@ using CSharpSynth.Midi;
 
 public class MusicNote
 {
-	private float[] m_chordIndices;
-	private uint m_lengthSixtyFourths;
-	private float m_volumePct;
-	private float[] m_chord;
+	private readonly float[] m_chordIndices;
+	private readonly uint m_lengthSixtyFourths;
+	private readonly float m_volumePct;
+	private readonly float[] m_chord;
 
 
 	public MusicNote(float[] chordIndices, uint lengthSixtyFourths, float volumePct, float[] chord)
@@ -41,32 +41,40 @@ public class MusicNote
 		get { return m_volumePct; }
 	}
 
-	public void toMidiEvents(uint rootNote, uint[] scaleSemitones, uint startSixtyFourths, uint samplesPerSixtyFourth, ref List<MidiEvent> events)
+	public List<MidiEvent> toMidiEvents(uint rootNote, uint[] scaleSemitones, uint startSixtyFourths, uint samplesPerSixtyFourth)
 	{
+		List<MidiEvent> events = new List<MidiEvent>();
+
 		uint startSample = startSixtyFourths * samplesPerSixtyFourth;
 		foreach (float index in m_chordIndices)
 		{
 			uint keyCur = chordIndexToMidiKey(index, rootNote, scaleSemitones);
 
-			MidiEvent eventOn = new MidiEvent();
-			eventOn.deltaTime = startSample;
-			eventOn.midiChannelEvent = MidiHelper.MidiChannelEvent.Note_On;
-			eventOn.parameter1 = (byte)keyCur;
-			eventOn.parameter2 = (byte)(m_volumePct * 100); // velocity
-			eventOn.channel = 0;
+			MidiEvent eventOn = new MidiEvent
+			{
+				deltaTime = startSample,
+				midiChannelEvent = MidiHelper.MidiChannelEvent.Note_On,
+				parameter1 = (byte)keyCur,
+				parameter2 = (byte)(m_volumePct * 100), // velocity
+				channel = 0,
+			};
 			events.Add(eventOn);
 		}
 
 		uint endSample = (startSixtyFourths + m_lengthSixtyFourths) * samplesPerSixtyFourth;
 		foreach (float index in m_chordIndices)
 		{
-			MidiEvent eventOff = new MidiEvent();
-			eventOff.deltaTime = endSample;
-			eventOff.midiChannelEvent = MidiHelper.MidiChannelEvent.Note_Off;
-			eventOff.parameter1 = (byte)chordIndexToMidiKey(index, rootNote, scaleSemitones);
-			eventOff.channel = 0;
+			MidiEvent eventOff = new MidiEvent
+			{
+				deltaTime = endSample,
+				midiChannelEvent = MidiHelper.MidiChannelEvent.Note_Off,
+				parameter1 = (byte)chordIndexToMidiKey(index, rootNote, scaleSemitones),
+				channel = 0,
+			};
 			events.Add(eventOff);
 		}
+
+		return events;
 	}
 
 
