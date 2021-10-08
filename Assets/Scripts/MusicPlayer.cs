@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 #if UNITY_EDITOR
 using System.IO;
 #else
@@ -13,7 +14,7 @@ using CSharpSynth.Synthesis;
 public class MusicPlayer : MonoBehaviour
 {
 #if UNITY_EDITOR
-	private static void OSMD_update(uint bpm, uint[] keys, uint[] lengths, int key_count)
+	private static void OSMD_update(uint bpm, uint[] times, uint[] keys, uint[] lengths, int key_count)
 	{
 		// copy HTML/JS header from template file
 		const string output_filename = "debugOutput.html";
@@ -27,6 +28,7 @@ public class MusicPlayer : MonoBehaviour
 
 		// add "params"
 		outputFile.WriteLine("\t\tvar bpm = " + bpm + ";");
+		outputFile.WriteLine("\t\tvar times = [" + string.Join(", ", times) + "];");
 		outputFile.WriteLine("\t\tvar keys = [" + string.Join(", ", keys) + "];");
 		outputFile.WriteLine("\t\tvar lengths = [" + string.Join(", ", lengths) + "];");
 		outputFile.WriteLine("\t\tvar key_count = " + key_count + ";");
@@ -58,7 +60,7 @@ public class MusicPlayer : MonoBehaviour
 #else
 	// see Plugins/OSMD_bridge/osmd_bridge.jslib
 	[DllImport("__Internal")]
-	private static extern void OSMD_update(uint bpm, uint[] keys, uint[] lengths, int key_count);
+	private static extern void OSMD_update(uint bpm, uint[] times, uint[] keys, uint[] lengths, int key_count);
 #endif
 
 	public uint m_samplesPerSecond = 44100U;
@@ -115,10 +117,14 @@ public class MusicPlayer : MonoBehaviour
 		audio_source.clip = AudioClip.Create("Generated Clip", (int)length_samples, (int)channels, (int)m_samplesPerSecond, false, OnAudioRead, OnAudioSetPosition);
 		audio_source.Play();
 
-		uint[] keySequence = musicSequencer.KeySequence.ToArray();
-		uint[] lengthSequence = musicSequencer.LengthSequence.ToArray();
+		// update display
+		List<MusicBlock.NoteTimePair> noteTimeSequence = musicSequencer.NoteTimeSequence;
+		uint[] timeSequence = noteTimeSequence.SelectMany(pair => Enumerable.Repeat(pair.m_time, (int)pair.m_note.KeyCount)).ToArray();
+		uint[] keySequence = noteTimeSequence.SelectMany(pair => pair.m_note.MidiKeys(musicSequencer.m_rootKey, musicSequencer.m_scaleSemitones)).ToArray();
+		uint[] lengthSequence = noteTimeSequence.SelectMany(pair => Enumerable.Repeat(pair.m_note.LengthSixtyFourths, (int)pair.m_note.KeyCount)).ToArray();
+		Assert.AreEqual(timeSequence.Length, keySequence.Length);
 		Assert.AreEqual(keySequence.Length, lengthSequence.Length);
-		OSMD_update(bpm, keySequence, lengthSequence, lengthSequence.Length);
+		OSMD_update(bpm, timeSequence, keySequence, lengthSequence, keySequence.Length);
 	}
 
 

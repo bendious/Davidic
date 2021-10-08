@@ -13,8 +13,8 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	// TODO: convert to MidiFile?
 	private readonly MusicBlock m_musicBlock;
 	private readonly List<MidiEvent> m_events;
-	private readonly uint m_rootKey;
-	private readonly uint[] m_scaleSemitones;
+	public readonly uint m_rootKey;
+	public readonly uint[] m_scaleSemitones;
 
 	private int m_eventIndex;
 
@@ -58,7 +58,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 			chordIdx = (isScale ? chordIdx + 1 : (int)UnityEngine.Random.Range(keyMinRooted, keyMaxRooted));
 			uint sixtyFourthsCur = isScale ? sixtyFourthsPerBeat / 2U : (uint)(1 << (int)UnityEngine.Random.Range(0, Math.Min(6, sixtyfourthsTotal - sixtyFourthsItr))); // TODO: better capping at max measure end
 
-			MusicNote noteNew = new MusicNote(new float[] { 0.0f, 1.0f }, sixtyFourthsCur, UnityEngine.Random.Range(0.5f, 1.0f), new float[] { chordIdx, chordIdx + 2.0f }); // TODO: actual chords, coherent volume
+			MusicNote noteNew = new MusicNote(new float[] { 0.0f }, sixtyFourthsCur, UnityEngine.Random.Range(0.5f, 1.0f), new float[] { chordIdx, chordIdx + 2.0f, chordIdx + 4.0f }); // TODO: actual chords, coherent volume
 			notesTemp.Add(noteNew);
 
 			sixtyFourthsItr += noteNew.LengthSixtyFourths;
@@ -66,6 +66,10 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 		// organize notes into block(s)
 		m_musicBlock = new MusicBlockSimple(notesTemp.ToArray());
+		if (UnityEngine.Random.value > 0.5f)
+		{
+			m_musicBlock = new MusicBlockHarmony(m_musicBlock);
+		}
 		if (!isScale)
 		{
 			m_musicBlock = new MusicBlockRepeat(new MusicBlock[] { m_musicBlock }, new uint[] { 0, 0 }); // TODO: more sophisticated arrangements
@@ -107,13 +111,8 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		get { return m_musicBlock.SixtyFourthsTotal() * m_samplesPerSixtyFourth; }
 	}
 
-	public List<uint> KeySequence
+	public List<MusicBlock.NoteTimePair> NoteTimeSequence
 	{
-		get { return m_musicBlock.GetKeys(m_rootKey, m_scaleSemitones); }
-	}
-
-	public List<uint> LengthSequence
-	{
-		get { return m_musicBlock.GetLengths(); }
+		get { return m_musicBlock.GetNotes(0U); }
 	}
 }

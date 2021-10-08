@@ -1,5 +1,5 @@
 mergeInto(LibraryManager.library, {
-	OSMD_update: function (bpm, keys, lengths, key_count) {
+	OSMD_update: function (bpm, times, keys, lengths, key_count) {
 		var inputArrayUint = function (array, index) {
 			return HEAPU32[(array >> 2) + index]; // see https://docs.unity3d.com/Manual/webgl-interactingwithbrowserscripting.html
 		};
@@ -51,16 +51,18 @@ mergeInto(LibraryManager.library, {
 
 		// convert key array into MusicXML
 		const length_per_measure = 64; // TODO: account for different time signatures
+		var time_val_prev = -1;
 		var length_total = 0;
-		var length_val_prev = 0;
 		var type_str = '';
 		for (var i = 0; i < key_count; ++i) {
+			var time_val = inputArrayUint(times, i);
 			var key_val = inputArrayUint(keys, i);
 			var length_val = inputArrayUint(lengths, i);
-			console.log("key " + key_val + ", length " + length_val); // TEMP?
+			console.log("time " + time_val + ", key " + key_val + ", length " + length_val); // TEMP?
 
 			// measure bar if appropriate
-			if (length_total > 0 && length_val > 0 && length_total % length_per_measure == 0) { // TODO: handle notes crossing measures?
+			var is_chord = (time_val == time_val_prev);
+			if (!is_chord && length_total > 0 && length_total % length_per_measure == 0) { // TODO: handle notes crossing measures?
 				xml_str += '\n\
 				  </measure>\n\
 				  <measure>';
@@ -83,21 +85,23 @@ mergeInto(LibraryManager.library, {
 			type_str = (length_val == 1 ? '64th' : length_val == 2 ? '32nd' : length_val == 4 ? '16th' : length_val == 8 ? 'eighth' : length_val == 16 ? 'quarter' : length_val == 32 ? 'half' : length_val == 64 ? 'whole' : type_str); // note that length_val of 0 is used for subsequent chord notes, in which case we just reuse the previous type
 			xml_str += '\n\
 				  <note>\n\
-					' + (length_val == 0 ? '<chord/>\n' : '') + '\
+					' + (is_chord ? '<chord/>\n' : '') + '\
 					<pitch>\n\
 					  <step>' + note_letter + '</step>\n\
 					  <alter>' + semitone_offset + '</alter>\n\
 					  <octave>' + note_octave + '</octave>\n\
 					</pitch>\n\
-					<duration>' + (length_val == 0 ? length_val_prev : length_val) + '</duration>\n\
+					<duration>' + length_val + '</duration>\n\
 					<voice>1</voice>\n\
 					<type>' + type_str + '</type>\n\
 					<accidental>' + (semitone_offset > 0 ? 'sharp' : semitone_offset < 0 ? 'flat' : '')/*TODO: account for key signature*/ + '</accidental>\n\
 				  </note>';
 			// TODO: <beam>/<dot/>/<{p/mp/mf/f}/>
 
-			length_total += length_val;
-			length_val_prev = length_val;
+			time_val_prev = time_val;
+			if (!is_chord) {
+				length_total += length_val;
+			}
 		}
 
 		// MusicXML footer

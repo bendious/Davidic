@@ -18,24 +18,24 @@ public class MusicBlockRepeat : MusicBlock
 
 	public override uint SixtyFourthsTotal()
 	{
-		return CombineViaSchedule((MusicBlock block) => new List<uint> { block.SixtyFourthsTotal() }).Aggregate((uint a, uint b) => a + b);
+		return CombineViaSchedule(block => new List<uint> { block.SixtyFourthsTotal() }).Aggregate((a, b) => a + b);
 	}
 
-	public override List<uint> GetKeys(uint rootKey, uint[] scaleSemitones)
+	public override List<NoteTimePair> GetNotes(uint timeOffset)
 	{
-		return CombineViaSchedule((MusicBlock block) => new List<uint>(block.GetKeys(rootKey, scaleSemitones)));
-	}
-
-	public override List<uint> GetLengths()
-	{
-		return CombineViaSchedule((MusicBlock block) => new List<uint>(block.GetLengths()));
+		uint timeItr = timeOffset;
+		return CombineViaSchedule(block => {
+			List<NoteTimePair> notes = block.GetNotes(timeItr);
+			timeItr += block.SixtyFourthsTotal();
+			return notes;
+		});
 	}
 
 	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, uint[] scaleSemitones, uint samplesPerSixtyFourth)
 	{
 		uint sixtyFourthsItr = startSixtyFourths;
-		return CombineViaSchedule((MusicBlock block) => {
-			List<MidiEvent> list = new List<MidiEvent>(block.ToMidiEvents(sixtyFourthsItr, rootKey, scaleSemitones, samplesPerSixtyFourth));
+		return CombineViaSchedule(block => {
+			List<MidiEvent> list = block.ToMidiEvents(sixtyFourthsItr, rootKey, scaleSemitones, samplesPerSixtyFourth);
 			sixtyFourthsItr += block.SixtyFourthsTotal();
 			return list;
 		});

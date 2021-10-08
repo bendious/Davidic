@@ -1,6 +1,7 @@
 using CSharpSynth.Midi;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -20,9 +21,17 @@ public class MusicNote
 		m_chord = chord;
 	}
 
+	public MusicNote(MusicNote noteOrig, float indexOffset)
+	{
+		m_chordIndices = Enumerable.Select(noteOrig.m_chordIndices, index => index + indexOffset).ToArray();
+		LengthSixtyFourths = noteOrig.LengthSixtyFourths;
+		VolumePct = noteOrig.VolumePct;
+		m_chord = noteOrig.m_chord;
+	}
+
 	public List<uint> MidiKeys(uint rootKey, uint[] scaleSemitones)
 	{
-		return new List<uint>(Array.ConvertAll(m_chordIndices, (float index) => ChordIndexToMidiKey(index, rootKey, scaleSemitones)));
+		return m_chordIndices.ToList().ConvertAll(index => ChordIndexToMidiKey(index, rootKey, scaleSemitones));
 	}
 
 	public uint KeyCount

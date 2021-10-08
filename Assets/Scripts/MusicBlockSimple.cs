@@ -16,30 +16,25 @@ public class MusicBlockSimple : MusicBlock
 
 	public override uint SixtyFourthsTotal()
 	{
-		return ListFromNotes((MusicNote note) => new List<uint> { note.LengthSixtyFourths }).Aggregate((uint a, uint b) => a + b);
+		return ListFromNotes(note => new List<uint> { note.LengthSixtyFourths }).Aggregate((a, b) => a + b);
 	}
 
-	public override List<uint> GetKeys(uint rootKey, uint[] scaleSemitones)
+	public override List<NoteTimePair> GetNotes(uint timeOffset)
 	{
-		return ListFromNotes((MusicNote note) => note.MidiKeys(rootKey, scaleSemitones));
-	}
-
-	public override List<uint> GetLengths()
-	{
-		return ListFromNotes((MusicNote note) => {
-			List<uint> lengthList = new List<uint> { note.LengthSixtyFourths };
-			for (uint i = 1U, n = note.KeyCount; i < n; ++i)
-			{
-				lengthList.Add(0U); // in order to more easily format chords for display w/ MusicXML's <chord/> convention of attaching to the previous note (see osmd_bridge.jslib), we put the length in only the first chord note
-			}
-			return lengthList;
-		});
+		List<NoteTimePair> list = new List<NoteTimePair>();
+		uint timeItr = timeOffset;
+		foreach (MusicNote note in m_notes)
+		{
+			list.Add(new NoteTimePair { m_note = note, m_time = timeItr });
+			timeItr += note.LengthSixtyFourths;
+		}
+		return list;
 	}
 
 	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, uint[] scaleSemitones, uint samplesPerSixtyFourth)
 	{
 		uint sixtyFourthsItr = startSixtyFourths;
-		return ListFromNotes((MusicNote note) => {
+		return ListFromNotes(note => {
 			List<MidiEvent> newEvents = note.ToMidiEvents(rootKey, scaleSemitones, sixtyFourthsItr, samplesPerSixtyFourth);
 			sixtyFourthsItr += note.LengthSixtyFourths;
 			return newEvents;
