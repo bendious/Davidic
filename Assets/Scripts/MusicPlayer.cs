@@ -67,8 +67,6 @@ public class MusicPlayer : MonoBehaviour
 	public bool m_stereo = true;
 	public uint maxPolyphony = 40U;
 
-	public UnityEngine.UI.InputField m_keyMinField;
-	public UnityEngine.UI.InputField m_keyMaxField;
 	public UnityEngine.UI.InputField m_tempoField;
 	public UnityEngine.UI.Dropdown m_rootNoteDropdown;
 	public UnityEngine.UI.Dropdown m_scaleDropdown;
@@ -108,7 +106,7 @@ public class MusicPlayer : MonoBehaviour
 		uint channels = (m_stereo ? 2U : 1U);
 		uint bpm = uint.Parse(m_tempoField.text);
 
-		musicSequencer = new MusicSequencer(musicStreamSynthesizer, isScale, uint.Parse(m_keyMinField.text), uint.Parse(m_keyMaxField.text), (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)m_instrumentDropdown.value, bpm);
+		musicSequencer = new MusicSequencer(musicStreamSynthesizer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)m_instrumentDropdown.value, bpm);
 
 		uint length_samples = musicSequencer.LengthSamples;
 

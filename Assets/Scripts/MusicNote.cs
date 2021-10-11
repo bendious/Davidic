@@ -21,9 +21,21 @@ public class MusicNote
 		m_chord = chord;
 	}
 
-	public MusicNote(MusicNote noteOrig, float indexOffset)
+	public MusicNote(MusicNote noteOrig, float[] indexOffsets)
 	{
-		m_chordIndices = Enumerable.Select(noteOrig.m_chordIndices, index => index + indexOffset).ToArray();
+		List<float> indicesCombined = new List<float>();
+		foreach (float index in noteOrig.m_chordIndices)
+		{
+			foreach (float offset in indexOffsets)
+			{
+				float indexNew = index + offset;
+				if (!noteOrig.m_chordIndices.Contains(indexNew))
+				{
+					indicesCombined.Add(indexNew);
+				}
+			}
+		}
+		m_chordIndices = indicesCombined.Distinct().ToArray();
 		LengthSixtyFourths = noteOrig.LengthSixtyFourths;
 		VolumePct = noteOrig.VolumePct;
 		m_chord = noteOrig.m_chord;
@@ -37,6 +49,11 @@ public class MusicNote
 	public uint KeyCount
 	{
 		get { return (uint)m_chordIndices.Length; }
+	}
+
+	public uint ChordCount
+	{
+		get { return (uint)m_chord.Length; }
 	}
 
 	public uint LengthSixtyFourths { get; }
@@ -81,13 +98,14 @@ public class MusicNote
 
 	private uint ChordIndexToMidiKey(float index, uint rootNote, uint[] scaleSemitones)
 	{
-		float chordSizeF = (float)m_chord.Length;
+		int chordSizeI = (int)ChordCount;
+		float chordSizeF = (float)chordSizeI;
 		Assert.IsTrue(chordSizeF > 0.0f);
 		float indexMod = Utility.Modulo(index, chordSizeF);
 		Assert.IsTrue(indexMod < chordSizeF);
 		int octaveOffset = (int)(index / chordSizeF) + (index < 0.0f ? -1 : 0);
 		float indexFractAbs = Mathf.Abs(Utility.Fract(index));
-		float tonePreOctave = (indexFractAbs <= 0.333f || indexFractAbs >= 0.667f) ? m_chord[(uint)Mathf.Round(indexMod)] : (m_chord[(int)Mathf.Floor(indexMod)] + m_chord[(int)Math.Ceiling(indexMod)]) * 0.5f; // TODO: better way of picking off-chord notes?
+		float tonePreOctave = (indexFractAbs <= 0.333f || indexFractAbs >= 0.667f) ? m_chord[(uint)Mathf.Round(indexMod)] : (m_chord[(int)Mathf.Floor(indexMod)] + m_chord[Utility.Modulo((int)Math.Ceiling(indexMod), chordSizeI)]) * 0.5f; // TODO: better way of picking off-chord notes?
 		int totalOffset = MusicUtility.TonesToSemitones(tonePreOctave, scaleSemitones) + octaveOffset * (int)MusicUtility.semitonesPerOctave;
 		return (uint)((int)rootNote + totalOffset);
 	}

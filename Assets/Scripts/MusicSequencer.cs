@@ -20,7 +20,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 
 	//--Public Methods
-	public MusicSequencer(StreamSynthesizer synth, bool isScale, uint keyMin, uint keyMax, uint rootKeyIndex, uint scaleIndex, uint instrumentIndex, uint bpm)
+	public MusicSequencer(StreamSynthesizer synth, bool isScale, uint rootKeyIndex, uint scaleIndex, uint instrumentIndex, uint bpm)
 		: base(synth)
 	{
 		const uint sixtyfourthsPerMeasure = 64U;
@@ -35,9 +35,8 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		uint sixtyfourthsTotal = sixtyfourthsPerMeasure * measureCount;
 
 		m_rootKey = (uint)(MusicUtility.midiMiddleAKey + MusicUtility.ScaleOffset(MusicUtility.naturalMinorScaleSemitones, (int)rootKeyIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
-		int keyMinRooted = (int)keyMin - (int)m_rootKey;
-		int keyMaxRooted = (int)keyMax - (int)m_rootKey;
 		m_scaleSemitones = MusicUtility.scales[scaleIndex];
+		float[][] chordProgression = isScale ? new float[][] { MusicUtility.chordI, MusicUtility.chordII, MusicUtility.chordIII, MusicUtility.chordIV, MusicUtility.chordV, MusicUtility.chordVI, MusicUtility.chordVII, new float[] { 7.0f, 9.0f, 11.0f } } : MusicUtility.chordProgressions[UnityEngine.Random.Range(0, MusicUtility.chordProgressions.Length)]; // TODO: intelligent / user-determined choice?
 
 		// switch to the requested instrument
 		MidiEvent eventSetInstrument = new MidiEvent
@@ -51,17 +50,20 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 		// create notes
 		uint sixtyFourthsItr = 0U;
-		int chordIdx = -1;
+		int chordProgIdx = 0;
+		int chordIdx = 0;
 		List<MusicNote> notesTemp = new List<MusicNote>();
 		while (sixtyFourthsItr < sixtyfourthsTotal)
 		{
-			chordIdx = (isScale ? chordIdx + 1 : (int)UnityEngine.Random.Range(keyMinRooted, keyMaxRooted));
-			uint sixtyFourthsCur = isScale ? sixtyFourthsPerBeat / 2U : (uint)(1 << (int)UnityEngine.Random.Range(0, Math.Min(6, sixtyfourthsTotal - sixtyFourthsItr))); // TODO: better capping at max measure end
+			float[] chord = chordProgression[chordProgIdx]; // TODO: pass whole progression and an index to each note?
+			chordIdx = isScale ? chordIdx : UnityEngine.Random.Range(0, chord.Length); // TODO: allow chord octave wrapping here as well as in harmonies?
+			uint sixtyFourthsCur = isScale ? sixtyFourthsPerBeat / 2U : (uint)(1 << UnityEngine.Random.Range(0, (int)Math.Min(6U, sixtyfourthsTotal - sixtyFourthsItr))); // TODO: better capping at max measure end
 
-			MusicNote noteNew = new MusicNote(new float[] { 0.0f }, sixtyFourthsCur, UnityEngine.Random.Range(0.5f, 1.0f), new float[] { chordIdx, chordIdx + 2.0f, chordIdx + 4.0f }); // TODO: actual chords, coherent volume
+			MusicNote noteNew = new MusicNote(new float[] { chordIdx }, sixtyFourthsCur, UnityEngine.Random.Range(0.5f, 1.0f), chord); // TODO: coherent volume
 			notesTemp.Add(noteNew);
 
 			sixtyFourthsItr += noteNew.LengthSixtyFourths;
+			chordProgIdx = Utility.Modulo(chordProgIdx + 1, chordProgression.Length); // TODO: don't increment every note?
 		}
 
 		// organize notes into block(s)

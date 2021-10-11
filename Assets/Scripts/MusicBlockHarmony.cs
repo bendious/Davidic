@@ -14,7 +14,15 @@ public class MusicBlockHarmony : MusicBlock
 		List<MusicNote> harmonyNotes = new List<MusicNote>();
 		foreach (NoteTimePair noteTime in melody.GetNotes(0U))
 		{
-			harmonyNotes.Add(new MusicNote(noteTime.m_note, 1.0f)); // TODO: actual harmony logic
+			// TODO: split/merge melody notes
+			MusicNote note = noteTime.m_note;
+			int chordSize = (int)note.ChordCount;
+			List<float> offsets = new List<float>();
+			for (uint i = 0, n = (uint)UnityEngine.Random.Range(1, 3); i < n; ++i)
+			{
+				offsets.Add(UnityEngine.Random.Range(-chordSize, chordSize)); // NOTE that MusicNote() handles preventing duplicates
+			}
+			harmonyNotes.Add(new MusicNote(note, offsets.ToArray()));
 		}
 		m_children = new MusicBlock[] { melody, new MusicBlockSimple(harmonyNotes.ToArray()) };
 	}
