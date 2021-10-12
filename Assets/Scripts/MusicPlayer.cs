@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 #endif
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.UI;
 using CSharpSynth.Synthesis;
 
 
@@ -70,11 +71,12 @@ public class MusicPlayer : MonoBehaviour
 	public bool m_stereo = true;
 	public uint m_maxPolyphony = 40U;
 
-	public UnityEngine.UI.InputField m_tempoField;
-	public UnityEngine.UI.Dropdown m_rootNoteDropdown;
-	public UnityEngine.UI.Dropdown m_scaleDropdown;
-	public UnityEngine.UI.Dropdown m_instrumentDropdown;
-	public UnityEngine.UI.InputField m_volumeField;
+	public InputField m_tempoField;
+	public Dropdown m_rootNoteDropdown;
+	public Dropdown m_scaleDropdown;
+	public ScrollRect m_instrumentScrollview;
+	public Text m_instrumentText;
+	public InputField m_volumeField;
 
 	private StreamSynthesizer m_musicStreamSynthesizer;
 	private MusicSequencer m_musicSequencer;
@@ -91,23 +93,56 @@ public class MusicPlayer : MonoBehaviour
 		m_musicStreamSynthesizer.LoadBank(m_bankFilePath);
 
 		// enumerate instruments in UI
-		m_instrumentDropdown.ClearOptions();
 		List<CSharpSynth.Banks.Instrument> instruments = m_musicStreamSynthesizer.SoundBank.getInstruments(false);
+		Assert.AreEqual(m_instrumentScrollview.content.childCount, 1);
+		GameObject placeholderObj = m_instrumentScrollview.content.GetChild(0).gameObject;
+		Assert.IsFalse(placeholderObj.activeSelf);
+		Vector2 nextPos = placeholderObj.GetComponent<RectTransform>().anchoredPosition;
+		float startY = nextPos.y;
+		float lineHeight = Mathf.Abs(placeholderObj.GetComponent<RectTransform>().rect.y);
 		for (int i = 0, n = instruments.Count; i < n; ++i)
 		{
 			if (instruments[i] == null)
 			{
 				continue;
 			}
-			m_instrumentDropdown.options.Add(new UnityEngine.UI.Dropdown.OptionData(instruments[i].Name));
+			string instrumentName = instruments[i].Name;
+
+			GameObject toggleObj = Instantiate(placeholderObj, m_instrumentScrollview.content.transform);
+			toggleObj.name = instrumentName;
+			toggleObj.GetComponentInChildren<Text>().text = instrumentName;
+			toggleObj.GetComponent<RectTransform>().anchoredPosition = nextPos;
+			toggleObj.SetActive(true);
+
+			nextPos.y -= lineHeight;
 		}
-		m_instrumentDropdown.RefreshShownValue();
+		m_instrumentScrollview.content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.Abs(nextPos.y + startY));
 	}
 
 	public void Generate(bool isScale)
 	{
+		// choose instrument
+		List<int> candidateIndices = new List<int>();
+		int numInactive = 0;
+		for (int i = 0, n = m_instrumentScrollview.content.childCount; i < n; ++i)
+		{
+			GameObject childObj = m_instrumentScrollview.content.GetChild(i).gameObject;
+			if (!childObj.activeSelf) {
+				++numInactive;
+			} else if (childObj.GetComponent<Toggle>().isOn)
+			{
+				candidateIndices.Add(i - numInactive);
+			}
+		}
+		if (candidateIndices.Count <= 0)
+		{
+			return;
+		}
+		int chosenInstrumentIdx = candidateIndices[Random.Range(0, candidateIndices.Count)];
+		m_instrumentText.text = "Current: " + m_musicStreamSynthesizer.SoundBank.getInstrument(chosenInstrumentIdx, false/*?*/).Name;
+
 		uint bpm = uint.Parse(m_tempoField.text);
-		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)m_instrumentDropdown.value, bpm);
+		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)chosenInstrumentIdx, bpm);
 
 		// update display
 		uint[] chordProgressionTimes = m_musicSequencer.m_chordProgression.SelectMany(chord => Enumerable.Repeat((uint)System.Array.IndexOf(m_musicSequencer.m_chordProgression, chord), chord.Length)).ToArray();
