@@ -2,6 +2,7 @@ using CSharpSynth.Midi;
 using CSharpSynth.Synthesis;
 using System;
 using System.Collections.Generic;
+using UnityEngine.Assertions;
 
 
 public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
@@ -107,6 +108,15 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	{
 		m_sampleTime += amount;
 		base.IncrementSampleCounter(amount);
+	}
+
+	public override void SetTime(TimeSpan time)
+	{
+		// TODO: handle time changes beyond just reset-to-start?
+		m_sampleTime = (int)time.Ticks;
+		Assert.IsTrue(m_sampleTime == 0);
+		m_eventIndex = 0;
+		base.SetTime(time);
 	}
 
 	public uint LengthSamples

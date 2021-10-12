@@ -332,7 +332,7 @@ namespace CSharpSynth.Sequencer
         {
             return SynthHelper.getSampleFromTime(synth.SampleRate, (DeltaTime * (60.0f / (((int)_MidiFile.BeatsPerMinute) * _MidiFile.MidiHeader.DeltaTiming))));
         }
-        private void SetTime(TimeSpan time)
+        /*private*/public virtual void SetTime(TimeSpan time)
         {
             int _stime = SynthHelper.getSampleFromTime(synth.SampleRate, (float)time.TotalSeconds);
             if (_stime > sampleTime)
@@ -345,14 +345,17 @@ namespace CSharpSynth.Sequencer
                 sampleTime = 0;
                 Array.Clear(currentPrograms, 0, currentPrograms.Length);
                 ResetControllers();
-                _MidiFile.BeatsPerMinute = 120;
+                if (_MidiFile != null)
+                {
+                    _MidiFile.BeatsPerMinute = 120;
+                }
                 eventIndex = 0;
                 SilentProcess(_stime);
             }
         }
         private void SilentProcess(int amount)
         {
-            while (eventIndex < _MidiFile.Tracks[0].EventCount && _MidiFile.Tracks[0].MidiEvents[eventIndex].deltaTime < (sampleTime + amount))
+            while (_MidiFile != null && eventIndex < _MidiFile.Tracks[0].EventCount && _MidiFile.Tracks[0].MidiEvents[eventIndex].deltaTime < (sampleTime + amount))
             {
                 if (_MidiFile.Tracks[0].MidiEvents[eventIndex].midiChannelEvent != MidiHelper.MidiChannelEvent.Note_On)
                     ProcessMidiEvent(_MidiFile.Tracks[0].MidiEvents[eventIndex]);               

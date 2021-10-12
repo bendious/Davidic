@@ -68,7 +68,7 @@ public class MusicPlayer : MonoBehaviour
 
 	public uint m_samplesPerSecond = 44100U;
 	public bool m_stereo = true;
-	public uint maxPolyphony = 40U;
+	public uint m_maxPolyphony = 40U;
 
 	public UnityEngine.UI.InputField m_tempoField;
 	public UnityEngine.UI.Dropdown m_rootNoteDropdown;
@@ -76,10 +76,10 @@ public class MusicPlayer : MonoBehaviour
 	public UnityEngine.UI.Dropdown m_instrumentDropdown;
 	public UnityEngine.UI.InputField m_volumeField;
 
-	private StreamSynthesizer musicStreamSynthesizer;
-	private MusicSequencer musicSequencer;
+	private StreamSynthesizer m_musicStreamSynthesizer;
+	private MusicSequencer m_musicSequencer;
 
-	public string bankFilePath = "GM Bank/gm";
+	public string m_bankFilePath = "GM Bank/gm";
 
 	public void Start()
 	{
@@ -87,12 +87,12 @@ public class MusicPlayer : MonoBehaviour
 		// TODO: recreate if relevant params change?
 		int channels = (m_stereo ? 2 : 1);
 		const int bytesPerBuffer = 4096; // TODO?
-		musicStreamSynthesizer = new StreamSynthesizer((int)m_samplesPerSecond, channels, bytesPerBuffer / channels, (int)maxPolyphony);
-		musicStreamSynthesizer.LoadBank(bankFilePath);
+		m_musicStreamSynthesizer = new StreamSynthesizer((int)m_samplesPerSecond, channels, bytesPerBuffer / channels, (int)m_maxPolyphony);
+		m_musicStreamSynthesizer.LoadBank(m_bankFilePath);
 
 		// enumerate instruments in UI
 		m_instrumentDropdown.ClearOptions();
-		List<CSharpSynth.Banks.Instrument> instruments = musicStreamSynthesizer.SoundBank.getInstruments(false);
+		List<CSharpSynth.Banks.Instrument> instruments = m_musicStreamSynthesizer.SoundBank.getInstruments(false);
 		for (int i = 0, n = instruments.Count; i < n; ++i)
 		{
 			if (instruments[i] == null)
@@ -104,26 +104,17 @@ public class MusicPlayer : MonoBehaviour
 		m_instrumentDropdown.RefreshShownValue();
 	}
 
-	public void PlayMusic(bool isScale)
+	public void Generate(bool isScale)
 	{
-		uint channels = (m_stereo ? 2U : 1U);
 		uint bpm = uint.Parse(m_tempoField.text);
-
-		musicSequencer = new MusicSequencer(musicStreamSynthesizer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)m_instrumentDropdown.value, bpm);
-
-		uint length_samples = musicSequencer.LengthSamples;
-
-		AudioSource audio_source = GetComponent<AudioSource>();
-		audio_source.volume = float.Parse(m_volumeField.text);
-		audio_source.clip = AudioClip.Create("Generated Clip", (int)length_samples, (int)channels, (int)m_samplesPerSecond, false, OnAudioRead, OnAudioSetPosition);
-		audio_source.Play();
+		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)m_instrumentDropdown.value, bpm);
 
 		// update display
-		uint[] chordProgressionTimes = musicSequencer.m_chordProgression.SelectMany(chord => Enumerable.Repeat((uint)System.Array.IndexOf(musicSequencer.m_chordProgression, chord), chord.Length)).ToArray();
-		uint[] chordProgressionKeys = musicSequencer.m_chordProgression.SelectMany(chord => chord.Select(note => (uint)MusicUtility.TonesToSemitones(note, musicSequencer.m_scaleSemitones) + 60U)).ToArray();
-		List<MusicBlock.NoteTimePair> noteTimeSequence = musicSequencer.NoteTimeSequence;
+		uint[] chordProgressionTimes = m_musicSequencer.m_chordProgression.SelectMany(chord => Enumerable.Repeat((uint)System.Array.IndexOf(m_musicSequencer.m_chordProgression, chord), chord.Length)).ToArray();
+		uint[] chordProgressionKeys = m_musicSequencer.m_chordProgression.SelectMany(chord => chord.Select(note => (uint)MusicUtility.TonesToSemitones(note, m_musicSequencer.m_scaleSemitones) + 60U)).ToArray();
+		List<MusicBlock.NoteTimePair> noteTimeSequence = m_musicSequencer.NoteTimeSequence;
 		uint[] timeSequence = noteTimeSequence.SelectMany(pair => Enumerable.Repeat(pair.m_time, (int)pair.m_note.KeyCount)).ToArray();
-		uint[] keySequence = noteTimeSequence.SelectMany(pair => pair.m_note.MidiKeys(musicSequencer.m_rootKey, musicSequencer.m_scaleSemitones)).ToArray();
+		uint[] keySequence = noteTimeSequence.SelectMany(pair => pair.m_note.MidiKeys(m_musicSequencer.m_rootKey, m_musicSequencer.m_scaleSemitones)).ToArray();
 		uint[] lengthSequence = noteTimeSequence.SelectMany(pair => Enumerable.Repeat(pair.m_note.LengthSixtyFourths, (int)pair.m_note.KeyCount)).ToArray();
 		Assert.AreEqual(chordProgressionTimes.Length, chordProgressionKeys.Length);
 		Assert.AreEqual(timeSequence.Length, keySequence.Length);
@@ -131,16 +122,27 @@ public class MusicPlayer : MonoBehaviour
 		OSMD_update(bpm, chordProgressionTimes, chordProgressionKeys, chordProgressionKeys.Length, timeSequence, keySequence, lengthSequence, keySequence.Length);
 	}
 
+	public void Play()
+	{
+		if (m_musicSequencer == null)
+		{
+			return;
+		}
+		AudioSource audio_source = GetComponent<AudioSource>();
+		audio_source.volume = float.Parse(m_volumeField.text);
+		audio_source.clip = AudioClip.Create("Generated Clip", (int)m_musicSequencer.LengthSamples, (m_stereo ? 2 : 1), (int)m_samplesPerSecond, false, OnAudioRead, OnAudioSetPosition);
+		audio_source.Play();
+	}
+
 
 	private void OnAudioRead(float[] data)
 	{
-		musicStreamSynthesizer.GetNext(data);
-		// NOTE that we don't increment musicSequencer since musicStreamSynthesizer takes care of that
+		m_musicStreamSynthesizer.GetNext(data);
+		// NOTE that we don't increment m_musicSequencer since m_musicStreamSynthesizer takes care of that
 	}
 
 	private void OnAudioSetPosition(int new_position)
 	{
-		Debug.Log("new position: " + new_position);
-//TODO		musicSequencer.SetTime(new_position);
+		m_musicSequencer.SetTime(new System.TimeSpan(new_position));
 	}
 }
