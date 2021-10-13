@@ -1,5 +1,5 @@
 mergeInto(LibraryManager.library, {
-	Update: function (element_id, note_count, times, keys, lengths, bpm) {
+	Update: function (element_id, title, note_count, times, keys, lengths, bpm) {
 		const inputArrayUint = function (array, index) {
 			return HEAPU32[(array >> 2) + index]; // see https://docs.unity3d.com/Manual/webgl-interactingwithbrowserscripting.html
 		};
@@ -39,7 +39,7 @@ mergeInto(LibraryManager.library, {
 				</attributes>\n\
 				<direction placement="above">\n\
 					<direction-type>\n\
-						<words>Chord\nprogression:</words>\n\
+						<words>' + Pointer_stringify(title) + '</words>\n\
 					</direction-type>\n\
 				</direction>' : '\n\
 			<measure>\n\

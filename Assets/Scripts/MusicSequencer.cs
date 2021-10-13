@@ -2,6 +2,7 @@ using CSharpSynth.Midi;
 using CSharpSynth.Synthesis;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine.Assertions;
 
 
@@ -124,6 +125,12 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	public void Display(string elementIdChords, string elementIdMain, uint bpm)
 	{
 		m_chordProgression.Display(m_scaleSemitones, elementIdChords);
+
+		// TODO: non-random rhythm
+		int rhythmLength = UnityEngine.Random.Range(4, 9);
+		MusicRhythm rhythm = new MusicRhythm(Enumerable.Repeat((uint)(1 << UnityEngine.Random.Range(0, 7)), rhythmLength).ToArray(), Enumerable.Repeat(UnityEngine.Random.Range(0.0f, 7.0f), rhythmLength).ToArray());
+		rhythm.Display(m_scaleSemitones, "osmd-rhythm");
+
 		m_musicBlock.Display(m_rootKey, m_scaleSemitones, elementIdMain, bpm);
 	}
 }
