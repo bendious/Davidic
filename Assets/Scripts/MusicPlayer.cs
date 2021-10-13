@@ -1,92 +1,13 @@
+using CSharpSynth.Synthesis;
 using System.Collections.Generic;
-using System.Linq;
-#if UNITY_EDITOR
-using System.IO;
-#else
-using System.Runtime.InteropServices;
-#endif
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.UI;
-using CSharpSynth.Synthesis;
 
 
 [RequireComponent(typeof(AudioSource))]
 public class MusicPlayer : MonoBehaviour
 {
-#if UNITY_EDITOR
-	private const string m_outputFilename = "debugOutput.html";
-#endif
-
-	private static void OSMD_start()
-	{
-#if UNITY_EDITOR
-		// copy HTML/JS header from template file
-		File.Copy("debugInput.html", m_outputFilename, true);
-		StreamWriter outputFile = new StreamWriter(m_outputFilename, true);
-
-		// add array/string retrieval helpers
-		outputFile.WriteLine("\t\tvar Pointer_stringify = function(str) {");
-		outputFile.WriteLine("\t\t\treturn str;");
-		outputFile.WriteLine("\t\t};");
-		outputFile.WriteLine("\t\tvar inputArrayUint = function(array, index) {");
-		outputFile.WriteLine("\t\t\treturn array[index];");
-		outputFile.WriteLine("\t\t};");
-		outputFile.Close();
-#endif
-	}
-
-#if UNITY_EDITOR
-	private static void OSMD_update(string element_id, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm)
-	{
-		StreamWriter outputFile = new StreamWriter(m_outputFilename, true);
-
-		// add "params"
-		outputFile.WriteLine("\t\tvar element_id = '" + element_id + "';");
-		outputFile.WriteLine("\t\tvar note_count = " + note_count + ";");
-		outputFile.WriteLine("\t\tvar times = [" + string.Join(", ", times) + "];");
-		outputFile.WriteLine("\t\tvar keys = [" + string.Join(", ", keys) + "];");
-		outputFile.WriteLine("\t\tvar lengths = [" + string.Join(", ", lengths) + "];");
-		outputFile.WriteLine("\t\tvar bpm = " + bpm + ";");
-
-		// copy bridge code
-		StreamReader inputFile = new StreamReader("Assets/Plugins/OSMD_bridge/osmd_bridge.jslib");
-		const uint lineSkipCount = 6U; // TODO: dynamically determine number of skipped lines?
-		for (uint i = 0U; i < lineSkipCount; ++i)
-		{
-			inputFile.ReadLine();
-		}
-		while (true)
-		{
-			string inLine = inputFile.ReadLine();
-			if (inLine == null || inLine == "});" || inLine == "\t},") // TODO: skip a certain number of lines at the end rather than hardcoded values?
-			{
-				break;
-			}
-			outputFile.WriteLine(inLine);
-		}
-		inputFile.Close();
-		outputFile.Close();
-	}
-#else
-	// see Plugins/OSMD_bridge/osmd_bridge.jslib
-	[DllImport("__Internal")]
-	private static extern void OSMD_update(string element_id, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm);
-#endif
-
-	private static void OSMD_finish()
-	{
-#if UNITY_EDITOR
-		StreamWriter outputFile = new StreamWriter(m_outputFilename, true);
-
-		// add HTML footer
-		outputFile.WriteLine("\t\t</script>");
-		outputFile.WriteLine("\t</body>");
-		outputFile.WriteLine("</html>");
-		outputFile.Close();
-#endif
-	}
-
 	public uint m_samplesPerSecond = 44100U;
 	public bool m_stereo = true;
 	public uint m_maxPolyphony = 40U;
@@ -165,19 +86,9 @@ public class MusicPlayer : MonoBehaviour
 		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)chosenInstrumentIdx, bpm);
 
 		// update display
-		uint[] chordProgressionTimes = m_musicSequencer.m_chordProgression.SelectMany(chord => Enumerable.Repeat((uint)System.Array.IndexOf(m_musicSequencer.m_chordProgression, chord), chord.Length)).ToArray();
-		uint[] chordProgressionKeys = m_musicSequencer.m_chordProgression.SelectMany(chord => chord.Select(note => (uint)MusicUtility.TonesToSemitones(note, m_musicSequencer.m_scaleSemitones) + 60U)).ToArray();
-		List<MusicBlock.NoteTimePair> noteTimeSequence = m_musicSequencer.NoteTimeSequence;
-		uint[] timeSequence = noteTimeSequence.SelectMany(pair => Enumerable.Repeat(pair.m_time, (int)pair.m_note.KeyCount)).ToArray();
-		uint[] keySequence = noteTimeSequence.SelectMany(pair => pair.m_note.MidiKeys(m_musicSequencer.m_rootKey, m_musicSequencer.m_scaleSemitones)).ToArray();
-		uint[] lengthSequence = noteTimeSequence.SelectMany(pair => Enumerable.Repeat(pair.m_note.LengthSixtyFourths, (int)pair.m_note.KeyCount)).ToArray();
-		Assert.AreEqual(chordProgressionTimes.Length, chordProgressionKeys.Length);
-		Assert.AreEqual(timeSequence.Length, keySequence.Length);
-		Assert.AreEqual(keySequence.Length, lengthSequence.Length);
-		OSMD_start();
-		OSMD_update("osmd-chords", chordProgressionKeys.Length, chordProgressionTimes, chordProgressionKeys, Enumerable.Repeat(16U, chordProgressionKeys.Length).ToArray(), 0U);
-		OSMD_update("osmd-main", keySequence.Length, timeSequence, keySequence, lengthSequence, bpm);
-		OSMD_finish();
+		MusicDisplay.Start();
+		m_musicSequencer.Display("osmd-chords", "osmd-main", bpm);
+		MusicDisplay.Finish();
 	}
 
 	public void Play()

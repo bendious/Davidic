@@ -6,8 +6,11 @@ public static class MusicUtility
 {
 	public const uint semitonesPerOctave = 12U;
 	public const uint secondsPerMinute = 60U;
+	public const uint sixtyFourthsPerMeasure = 64U;
+	public const uint sixtyFourthsPerBeat = 16U; // TODO: functionize based on time signature
 
 	public const uint midiMiddleAKey = 57U;
+	public const uint midiMiddleCKey = 60U;
 
 
 	public static readonly uint[] majorScaleSemitones = {
@@ -68,53 +71,53 @@ public static class MusicUtility
 	public static readonly float[] chordVII = { 6.0f, 8.0f, 10.0f };
 	public static readonly float[] chordVII7 = { 6.0f, 8.0f, 10.0f, 13.0f };
 
-	public static readonly float[][][] chordProgressions =
+	public static readonly ChordProgression[] chordProgressions =
 	{
 		// https://www.musictheoryacademy.com/understanding-music/chord-progressions/
-		new float[][] { chordI, chordIV, chordV },
-		new float[][] { chordI, chordV, chordVI, chordIV },
-		new float[][] { chordI, chordIV, chordI, chordV, chordI },
-		new float[][] { chordI, chordVI, chordII, chordV },
-		new float[][] { chordI, chordIV, chordVII, chordIII, chordVI, chordII, chordV, chordI },
-		new float[][] { chordI, chordIV, chordV, chordI },
+		new ChordProgression(new float[][] { chordI, chordIV, chordV }),
+		new ChordProgression(new float[][] { chordI, chordV, chordVI, chordIV }),
+		new ChordProgression(new float[][] { chordI, chordIV, chordI, chordV, chordI }),
+		new ChordProgression(new float[][] { chordI, chordVI, chordII, chordV }),
+		new ChordProgression(new float[][] { chordI, chordIV, chordVII, chordIII, chordVI, chordII, chordV, chordI }),
+		new ChordProgression(new float[][] { chordI, chordIV, chordV, chordI }),
 
 		// https://en.wikipedia.org/wiki/List_of_chordprogressions
 		// TODO: split according to type and match w/ scale used?
 		// Major
-		new float[][] { chordI, chordVI/*m*/, chordIV, chordV }, // 50s progression
-		new float[][] { chordII/*m*/, new float [] { 0.5f, 3.0f, 6.5f }, chordI7 }, // ii-V-I w/ tritone substitution
-		new float[][] { new float [] { 1.5f, 3.5f, 5.0f, 7.0f }/*m?*/, new float [] { -3.0f, -1.0f, 1.0f, 4.0f, 6.0f, 10.0f }, chordI7/*+*/ }, // viiO7/V-V-I
-		new float[][] { chordII/*m*/, new float [] { 1.0f, 3.0f, 4.5f, 5.5f }, chordI }, // Backdoor progression
-		new float[][] { new float [] { 0.0f, 2.0f, 4.0f, 6.0f }, new float [] { -1.0f, 1.0f, 3.0f, 5.0f }/*m*/, new float [] { 2.0f, 4.5f, 6.0f, 8.0f }, new float [] { -2.0f, 0.0f, 2.0f, 4.0f }/*m*/, new float [] { 1.0f, 3.5f, 5.0f, 7.0f }, new float [] { -3.0f, -1.0f, 1.0f, 3.0f }/*m*/, new float [] { 0.0f, 2.0f, 4.0f, 5.5f }, new float [] { 3.0f, 5.0f, 7.0f, 8.5f }, new float [] { 3.0f, 4.5f, 7.0f, 8.5f }/*m*/, new float [] { -1.5f, 1.0f, 3.0f, 4.5f }, new float [] { 2.0f, 4.0f, 6.0f, 8.0f }/*m*/, new float [] { -2.0f, 0.5f, 2.0f, 4.0f }, new float [] { 1.5f, 3.0f, 5.5f, 6.5f }/*m*/, new float [] { -2.5f, -0.5f, 1.5f, 3.5f }, new float [] { 1.0f, 3.0f, 5.0f, 7.0f }/*m*/, new float [] { -3.0f, -1.0f, 1.0f, 3.0f }, new float [] { 0.0f, 2.0f, 4.0f, 6.0f }, new float [] { -2.0f, 0.5f, 2.0f, 4.0f }, new float [] { 1.0f, 3.0f, 5.0f, 7.0f }/*m*/, new float [] { -3.0f, -1.0f, 1.0f, 3.0f } }, // Bird changes
-		new float[][] { chordVI/*m*/, chordII/*m*/, chordV, chordI }, // Circle progression
-		new float[][] { chordI7, new float [] { 1.5f, 5.5f, 7.5f, 11.0f }, new float [] { 4.5f, 7.0f, 8.5f, 11.5f }, new float [] { -1.0f, 3.5f, 5.0f, 8.5f }, new float [] { 2.0f, 4.5f, 6.0f, 9.0f }, new float [] { -3.0f, 1.0f, 3.0f, 6.0f }, chordI7 }, // Coltrane changes
-		new float[][] { chordI7, chordV7, chordIV7, chordIV7, chordI7, chordV7, chordI7, chordV7 }, // Eight-bar blues
-		new float[][] { chordII/*m*/, chordV/*+*/, chordI7 }, // ii-V-I progression
-		new float[][] { chordV7, chordIII7 }, // Irregular resolution
-		new float[][] { chordI, chordIV, chordII/*m*/, chordV }, // Montgomery-Ward bridge
-		new float[][] { new float [] { 0.0f, 2.0f, 4.0f, 6.0f }, new float [] { -0.5f, 2.0f, 4.0f, 6.5f }/*m*/, new float [] { -1.0f, 2.0f, 4.0f, 7.0f }, new float [] { -2.0f, 2.0f, 4.0f, 7.5f }, new float [] { -2.5f, 2.0f, 4.5f, 7.5f }/*m*/, new float [] { -3.0f, 2.0f, 5.0f, 7.5f }, new float [] { -3.5f, 2.5f, 6.0f, 7.5f }, new float [] { -4.0f, 3.0f, 6.0f, 7.5f }/*m*/, new float [] { -4.5f, 3.5f, 6.0f, 7.5f }, new float [] { -5.5f, 4.0f, 6.0f, 7.5f }, new float [] { -6.0f, 4.0f, 6.0f, 8.0f }/*m*/, new float [] { -6.5f, 4.0f, 6.0f, 8.5f }, new float [] { -7.0f, 4.0f, 6.0f, 9.0f } }, // Omnibus progression
-		new float[][] { chordI, chordV, chordVI, chordIII/*m*/, chordIV, chordI, chordIV, chordV }, // Pachelbel's Canon
-		new float[][] { chordI, chordIV, chordI, chordV, chordI, chordIV, chordI,/*-*/chordV, chordI }, // Passamezzo moderno
-		new float[][] { chordI,/*-*/chordV, chordVI/*m*/,/*-*/chordIV }, // I-V-vi-IV progression
-		new float[][] { new float [] { 2.0f, 4.5f, 6.0f, 8.0f }, new float [] { -2.0f, 2.0f, 4.0f, 7.5f }, new float [] { 1.0f, 3.5f, 5.0f, 7.0f }, new float [] { -3.0f, 1.0f, 3.0f, 6.0f } }, // Ragtime progression
-		new float[][] { chordI, new float [] { -2.0f, 0.0f, 2.0f, 4.0f }, chordII, new float [] { -3.0f, 1.0f, 6.0f }, chordI, new float [] { -2.0f, 0.0f, 2.0f, 4.0f }, chordII, new float [] { -3.0f, 1.0f, 6.0f }, chordI, new float [] { 0.0f, 2.0f, 4.0f, 5.5f }, new float [] { 0.0f, 3.0f, 5.0f }, new float [] { 0.0f, 3.5f, 5.0f }, chordI, new float [] { -3.0f, 1.0f, 3.0f, 6.0f }, chordI7 }, ///*V/V/V/V*/,/*-*//*V/V/V*/,/*-*//*V/V*/,/*-*/4.0f, chordI7 }, // Rhythm changes
-		new float[][] { new float [] { 0.0f, 2.0f, 4.0f, 9.0f }, new float [] { -3.0f, -1.0f, 1.0f, 8.0f }, new float [] { -2.0f, 0.0f, 2.0f, 7.0f }/*m*/, new float [] { -5.0f, -2.5f, -1.0f, 6.0f }, new float [] { 0.0f, 2.0f, 4.0f, 9.0f }, new float [] { -3.0f, -1.0f, 1.0f, 8.0f }, new float [] { -2.0f, 0.0f, 2.0f, 7.0f }/*m*/,/*-*/new float[] { -5.0f, -2.5f, -1.0f, 6.0f }, new float [] { -2.0f, 0.0f, 2.0f, 5.0f }/*m*/ }, // Romanesca
-		new float[][] { chordI7, chordI7, chordI7, chordI7, chordI7, chordI7, chordI7, chordI7, chordIV7, chordIV7, chordI7, chordI7, chordV7, chordIV7, chordI7, chordI7 }, // Sixteen-bar blues
-		new float[][] { new float [] { -4.0f, -2.0f, 0.0f, 1.5f },/*-*/new float[] { -3.5f, -2.0f, 0.5f, 1.5f }, new float [] { -3.0f, -1.5f, 0.0f, 2.0f },/*-*/new float[] { -7.0f, -5.0f, -3.0f, -1.5f, 0.0f }, new float [] { -4.0f, -2.0f, 0.0f, 1.5f },/*-*/new float[] { -3.5f, -2.0f, 0.5f, 1.5f }, new float [] { -3.0f, -1.5f, 0.0f, 2.0f },/*-*/new float[] { -7.0f, -5.0f, -3.0f, -1.5f, 0.0f }, new float [] { -4.0f, -2.0f, 0.0f, 1.5f },/*-*/new float[] { -3.5f, -2.0f, 0.5f, 1.5f }, new float [] { -3.0f, -1.5f, 0.0f, 2.0f },/*-*/new float[] { -2.0f, 0.5f, 2.0f, 4.0f }, new float [] { -6.0f, -3.5f, -2.0f, 0.0f },/*-*/new float[] { -3.0f, -1.0f, 1.0f, 3.0f }, new float [] { -7.0f, -5.0f, -3.0f, -1.5f, 0.0f } }, // Stomp progression
-		new float[][] { chordI7, chordI7, chordI7, chordI7, chordIV7, chordIV7, chordI7, chordI7, chordV7, chordIV7, chordI7, chordI7 }, // Twelve-bar blues
-		new float[][] { chordI, new float [] { -2.0f, 2.0f, 4.0f, 7.0f }/*m*/, new float [] { 1.0f, 3.0f, 5.0f, 8.0f }/*m*/, new float [] { -3.0f, 1.0f, 3.0f, 6.0f } }, // Turnaround
-		new float[][] { new float [] { -3.0f, 1.0f, 3.0f, 6.0f },/*-*/new float[] { 0.0f, 1.5f, 3.0f, 5.0f }, new float [] { 0.0f, 2.0f, 4.0f, 5.5f, 7.0f } }, // V-IV-I turnaround
+		new ChordProgression(new float[][] { chordI, chordVI/*m*/, chordIV, chordV }), // 50s progression
+		new ChordProgression(new float[][] { chordII/*m*/, new float[] { 0.5f, 3.0f, 6.5f }, chordI7 }), // ii-V-I w/ tritone substitution
+		new ChordProgression(new float[][] { new float[] { 1.5f, 3.5f, 5.0f, 7.0f }/*m?*/, new float[] { -3.0f, -1.0f, 1.0f, 4.0f, 6.0f, 10.0f }, chordI7/*+*/ }), // viiO7/V-V-I
+		new ChordProgression(new float[][] { chordII/*m*/, new float[] { 1.0f, 3.0f, 4.5f, 5.5f }, chordI }), // Backdoor progression
+		new ChordProgression(new float[][] { new float[] { 0.0f, 2.0f, 4.0f, 6.0f }, new float[] { -1.0f, 1.0f, 3.0f, 5.0f }/*m*/, new float[] { 2.0f, 4.5f, 6.0f, 8.0f }, new float[] { -2.0f, 0.0f, 2.0f, 4.0f }/*m*/, new float[] { 1.0f, 3.5f, 5.0f, 7.0f }, new float[] { -3.0f, -1.0f, 1.0f, 3.0f }/*m*/, new float[] { 0.0f, 2.0f, 4.0f, 5.5f }, new float[] { 3.0f, 5.0f, 7.0f, 8.5f }, new float[] { 3.0f, 4.5f, 7.0f, 8.5f }/*m*/, new float[] { -1.5f, 1.0f, 3.0f, 4.5f }, new float[] { 2.0f, 4.0f, 6.0f, 8.0f }/*m*/, new float[] { -2.0f, 0.5f, 2.0f, 4.0f }, new float[] { 1.5f, 3.0f, 5.5f, 6.5f }/*m*/, new float[] { -2.5f, -0.5f, 1.5f, 3.5f }, new float[] { 1.0f, 3.0f, 5.0f, 7.0f }/*m*/, new float[] { -3.0f, -1.0f, 1.0f, 3.0f }, new float[] { 0.0f, 2.0f, 4.0f, 6.0f }, new float[] { -2.0f, 0.5f, 2.0f, 4.0f }, new float[] { 1.0f, 3.0f, 5.0f, 7.0f }/*m*/, new float[] { -3.0f, -1.0f, 1.0f, 3.0f } }), // Bird changes
+		new ChordProgression(new float[][] { chordVI/*m*/, chordII/*m*/, chordV, chordI }), // Circle progression
+		new ChordProgression(new float[][] { chordI7, new float[] { 1.5f, 5.5f, 7.5f, 11.0f }, new float[] { 4.5f, 7.0f, 8.5f, 11.5f }, new float[] { -1.0f, 3.5f, 5.0f, 8.5f }, new float[] { 2.0f, 4.5f, 6.0f, 9.0f }, new float[] { -3.0f, 1.0f, 3.0f, 6.0f }, chordI7 }), // Coltrane changes
+		new ChordProgression(new float[][] { chordI7, chordV7, chordIV7, chordIV7, chordI7, chordV7, chordI7, chordV7 }), // Eight-bar blues
+		new ChordProgression(new float[][] { chordII/*m*/, chordV/*+*/, chordI7 }), // ii-V-I progression
+		new ChordProgression(new float[][] { chordV7, chordIII7 }), // Irregular resolution
+		new ChordProgression(new float[][] { chordI, chordIV, chordII/*m*/, chordV }), // Montgomery-Ward bridge
+		new ChordProgression(new float[][] { new float[] { 0.0f, 2.0f, 4.0f, 6.0f }, new float[] { -0.5f, 2.0f, 4.0f, 6.5f }/*m*/, new float[] { -1.0f, 2.0f, 4.0f, 7.0f }, new float[] { -2.0f, 2.0f, 4.0f, 7.5f }, new float[] { -2.5f, 2.0f, 4.5f, 7.5f }/*m*/, new float[] { -3.0f, 2.0f, 5.0f, 7.5f }, new float[] { -3.5f, 2.5f, 6.0f, 7.5f }, new float[] { -4.0f, 3.0f, 6.0f, 7.5f }/*m*/, new float[] { -4.5f, 3.5f, 6.0f, 7.5f }, new float[] { -5.5f, 4.0f, 6.0f, 7.5f }, new float[] { -6.0f, 4.0f, 6.0f, 8.0f }/*m*/, new float[] { -6.5f, 4.0f, 6.0f, 8.5f }, new float[] { -7.0f, 4.0f, 6.0f, 9.0f } }), // Omnibus progression
+		new ChordProgression(new float[][] { chordI, chordV, chordVI, chordIII/*m*/, chordIV, chordI, chordIV, chordV }), // Pachelbel's Canon
+		new ChordProgression(new float[][] { chordI, chordIV, chordI, chordV, chordI, chordIV, chordI,/*-*/chordV, chordI }), // Passamezzo moderno
+		new ChordProgression(new float[][] { chordI,/*-*/chordV, chordVI/*m*/,/*-*/chordIV }), // I-V-vi-IV progression
+		new ChordProgression(new float[][] { new float[] { 2.0f, 4.5f, 6.0f, 8.0f }, new float[] { -2.0f, 2.0f, 4.0f, 7.5f }, new float[] { 1.0f, 3.5f, 5.0f, 7.0f }, new float[] { -3.0f, 1.0f, 3.0f, 6.0f } }), // Ragtime progression
+		new ChordProgression(new float[][] { chordI, new float[] { -2.0f, 0.0f, 2.0f, 4.0f }, chordII, new float[] { -3.0f, 1.0f, 6.0f }, chordI, new float[] { -2.0f, 0.0f, 2.0f, 4.0f }, chordII, new float[] { -3.0f, 1.0f, 6.0f }, chordI, new float[] { 0.0f, 2.0f, 4.0f, 5.5f }, new float[] { 0.0f, 3.0f, 5.0f }, new float[] { 0.0f, 3.5f, 5.0f }, chordI, new float[] { -3.0f, 1.0f, 3.0f, 6.0f }, chordI7 }), ///*V/V/V/V*/,/*-*//*V/V/V*/,/*-*//*V/V*/,/*-*/4.0f, chordI7 }), // Rhythm changes
+		new ChordProgression(new float[][] { new float[] { 0.0f, 2.0f, 4.0f, 9.0f }, new float[] { -3.0f, -1.0f, 1.0f, 8.0f }, new float[] { -2.0f, 0.0f, 2.0f, 7.0f }/*m*/, new float[] { -5.0f, -2.5f, -1.0f, 6.0f }, new float[] { 0.0f, 2.0f, 4.0f, 9.0f }, new float[] { -3.0f, -1.0f, 1.0f, 8.0f }, new float[] { -2.0f, 0.0f, 2.0f, 7.0f }/*m*/,/*-*/new float[] { -5.0f, -2.5f, -1.0f, 6.0f }, new float[] { -2.0f, 0.0f, 2.0f, 5.0f }/*m*/ }), // Romanesca
+		new ChordProgression(new float[][] { chordI7, chordI7, chordI7, chordI7, chordI7, chordI7, chordI7, chordI7, chordIV7, chordIV7, chordI7, chordI7, chordV7, chordIV7, chordI7, chordI7 }), // Sixteen-bar blues
+		new ChordProgression(new float[][] { new float[] { -4.0f, -2.0f, 0.0f, 1.5f },/*-*/new float[] { -3.5f, -2.0f, 0.5f, 1.5f }, new float[] { -3.0f, -1.5f, 0.0f, 2.0f },/*-*/new float[] { -7.0f, -5.0f, -3.0f, -1.5f, 0.0f }, new float[] { -4.0f, -2.0f, 0.0f, 1.5f },/*-*/new float[] { -3.5f, -2.0f, 0.5f, 1.5f }, new float[] { -3.0f, -1.5f, 0.0f, 2.0f },/*-*/new float[] { -7.0f, -5.0f, -3.0f, -1.5f, 0.0f }, new float[] { -4.0f, -2.0f, 0.0f, 1.5f },/*-*/new float[] { -3.5f, -2.0f, 0.5f, 1.5f }, new float[] { -3.0f, -1.5f, 0.0f, 2.0f },/*-*/new float[] { -2.0f, 0.5f, 2.0f, 4.0f }, new float[] { -6.0f, -3.5f, -2.0f, 0.0f },/*-*/new float[] { -3.0f, -1.0f, 1.0f, 3.0f }, new float[] { -7.0f, -5.0f, -3.0f, -1.5f, 0.0f } }), // Stomp progression
+		new ChordProgression(new float[][] { chordI7, chordI7, chordI7, chordI7, chordIV7, chordIV7, chordI7, chordI7, chordV7, chordIV7, chordI7, chordI7 }), // Twelve-bar blues
+		new ChordProgression(new float[][] { chordI, new float[] { -2.0f, 2.0f, 4.0f, 7.0f }/*m*/, new float[] { 1.0f, 3.0f, 5.0f, 8.0f }/*m*/, new float[] { -3.0f, 1.0f, 3.0f, 6.0f } }), // Turnaround
+		new ChordProgression(new float[][] { new float[] { -3.0f, 1.0f, 3.0f, 6.0f },/*-*/new float[] { 0.0f, 1.5f, 3.0f, 5.0f }, new float[] { 0.0f, 2.0f, 4.0f, 5.5f, 7.0f } }), // V-IV-I turnaround
 		// Minor
-		new float[][] { chordI/*m*/, chordV, chordI/*m*/, /*b*/chordVII, /*b*/chordIII, /*b*/chordVII, chordI/*m*/, chordV, chordI/*m*/, chordV, chordI/*m*/, /*b*/chordVII, /*b*/chordIII, /*b*/chordVII, chordI/*m*/,/*-*/chordV, chordI/*m*/ }, // Folia
-		new float[][] { new float [] { -2.0f, 0.0f, 2.0f, 7.0f }/*m*/, new float [] { -3.0f, -1.0f, 1.0f, 6.0f }, new float [] { -2.0f, 0.0f, 2.0f, 5.0f }/*m*/, new float [] { -5.0f, 2.5f, -1.0f, 4.5f }, new float [] { 0.0f, 2.0f, 4.0f, 7.0f }, new float [] { -3.0f, -1.0f, 1.0f, 6.0f }, new float [] { -2.0f, 0.0f, 2.0f, 5.0f }/*m*/,/*-*/new float[] { -5.0f, 2.5f, -1.0f, 4.5f }, new float [] { -2.0f, 0.0f, 2.0f, 5.0f }/*m*/ }, // Passamezzo antico
-		new float[][] { chordI, new float [] { 5.5f, 1.0f, 3.0f }, new float [] { 4.5f, 0.0f, 1.5f }, new float [] { 5.5f, 1.0f, 3.0f } }, // I bVII bVI bVII
+		new ChordProgression(new float[][] { chordI/*m*/, chordV, chordI/*m*/, /*b*/chordVII, /*b*/chordIII, /*b*/chordVII, chordI/*m*/, chordV, chordI/*m*/, chordV, chordI/*m*/, /*b*/chordVII, /*b*/chordIII, /*b*/chordVII, chordI/*m*/,/*-*/chordV, chordI/*m*/ }), // Folia
+		new ChordProgression(new float[][] { new float[] { -2.0f, 0.0f, 2.0f, 7.0f }/*m*/, new float[] { -3.0f, -1.0f, 1.0f, 6.0f }, new float[] { -2.0f, 0.0f, 2.0f, 5.0f }/*m*/, new float[] { -5.0f, 2.5f, -1.0f, 4.5f }, new float[] { 0.0f, 2.0f, 4.0f, 7.0f }, new float[] { -3.0f, -1.0f, 1.0f, 6.0f }, new float[] { -2.0f, 0.0f, 2.0f, 5.0f }/*m*/,/*-*/new float[] { -5.0f, 2.5f, -1.0f, 4.5f }, new float[] { -2.0f, 0.0f, 2.0f, 5.0f }/*m*/ }), // Passamezzo antico
+		new ChordProgression(new float[][] { chordI, new float[] { 5.5f, 1.0f, 3.0f }, new float[] { 4.5f, 0.0f, 1.5f }, new float[] { 5.5f, 1.0f, 3.0f } }), // I bVII bVI bVII
 		// Mixolodian
-		new float[][] { new float [] { 0.0f, 4.0f, 7.0f, 9.0f, 11.0f, 14.0f }, new float [] { 0.0f, 3.0f, 7.0f, 10.0f, 12.0f, 14.0f }, new float [] { -1.5f, 3.0f, 5.5f, 8.0f, 10.0f, 12.5f }, new float [] { 0.0f, 3.0f, 7.0f, 10.0f, 12.0f, 14.0f } }, // I-IV-bVII-IV
-		new float[][] { new float [] { 1.0f, 3.0f, 5.0f, 7.0f }/*m*/, new float [] { 1.5f, 4.0f, 6.0f }, chordI7 }, // bIII+ as dominant substitute
-		new float[][] { new float [] { -9.0f, -5.0f, 0.0f, 5.0f }, new float [] { -12.0f, -5.0f, -1.0f, 4.0f }, new float [] { -10.0f, -6.0f, -1.0f, 4.0f }, new float [] { -13.0f, -6.0f, -2.0f, 3.0f } }, // Chromatic descending 5-6 sequence
-		new float[][] { new float [] { 3.0f, 5.5f, 8.0f }, new float [] { 3.0f, 4.0f, 6.0f, 8.0f } }, // bVII-V7 cadence
+		new ChordProgression(new float[][] { new float[] { 0.0f, 4.0f, 7.0f, 9.0f, 11.0f, 14.0f }, new float[] { 0.0f, 3.0f, 7.0f, 10.0f, 12.0f, 14.0f }, new float[] { -1.5f, 3.0f, 5.5f, 8.0f, 10.0f, 12.5f }, new float[] { 0.0f, 3.0f, 7.0f, 10.0f, 12.0f, 14.0f } }), // I-IV-bVII-IV
+		new ChordProgression(new float[][] { new float[] { 1.0f, 3.0f, 5.0f, 7.0f }/*m*/, new float[] { 1.5f, 4.0f, 6.0f }, chordI7 }), // bIII+ as dominant substitute
+		new ChordProgression(new float[][] { new float[] { -9.0f, -5.0f, 0.0f, 5.0f }, new float[] { -12.0f, -5.0f, -1.0f, 4.0f }, new float[] { -10.0f, -6.0f, -1.0f, 4.0f }, new float[] { -13.0f, -6.0f, -2.0f, 3.0f } }), // Chromatic descending 5-6 sequence
+		new ChordProgression(new float[][] { new float[] { 3.0f, 5.5f, 8.0f }, new float[] { 3.0f, 4.0f, 6.0f, 8.0f } }), // bVII-V7 cadence
 		// Phrygian dominant
-		new float[][] { chordIV/*m*/, chordIII, /*b*/new float[] { 1.0f, 3.0f, 5.0f }, chordI }, // Andalusian cadence
+		new ChordProgression(new float[][] { chordIV/*m*/, chordIII, /*b*/new float[] { 1.0f, 3.0f, 5.0f }, chordI }), // Andalusian cadence
 	};
 
 
