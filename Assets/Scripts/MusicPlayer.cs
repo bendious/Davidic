@@ -15,27 +15,39 @@ using CSharpSynth.Synthesis;
 public class MusicPlayer : MonoBehaviour
 {
 #if UNITY_EDITOR
-	private static void OSMD_update(uint bpm, uint[] chord_times, uint[] chord_keys, int chord_count, uint[] times, uint[] keys, uint[] lengths, int note_count)
-	{
-		// copy HTML/JS header from template file
-		const string output_filename = "debugOutput.html";
-		File.Copy("debugInput.html", output_filename, true);
-		StreamWriter outputFile = new StreamWriter(output_filename, true);
+	private const string m_outputFilename = "debugOutput.html";
+#endif
 
-		// add array retrieval helper
+	private static void OSMD_start()
+	{
+#if UNITY_EDITOR
+		// copy HTML/JS header from template file
+		File.Copy("debugInput.html", m_outputFilename, true);
+		StreamWriter outputFile = new StreamWriter(m_outputFilename, true);
+
+		// add array/string retrieval helpers
+		outputFile.WriteLine("\t\tvar Pointer_stringify = function(str) {");
+		outputFile.WriteLine("\t\t\treturn str;");
+		outputFile.WriteLine("\t\t};");
 		outputFile.WriteLine("\t\tvar inputArrayUint = function(array, index) {");
 		outputFile.WriteLine("\t\t\treturn array[index];");
 		outputFile.WriteLine("\t\t};");
+		outputFile.Close();
+#endif
+	}
+
+#if UNITY_EDITOR
+	private static void OSMD_update(string element_id, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm)
+	{
+		StreamWriter outputFile = new StreamWriter(m_outputFilename, true);
 
 		// add "params"
-		outputFile.WriteLine("\t\tvar bpm = " + bpm + ";");
-		outputFile.WriteLine("\t\tvar chord_times = [" + string.Join(", ", chord_times) + "];");
-		outputFile.WriteLine("\t\tvar chord_keys = [" + string.Join(", ", chord_keys) + "];");
-		outputFile.WriteLine("\t\tvar chord_count = " + chord_count + ";");
+		outputFile.WriteLine("\t\tvar element_id = '" + element_id + "';");
+		outputFile.WriteLine("\t\tvar note_count = " + note_count + ";");
 		outputFile.WriteLine("\t\tvar times = [" + string.Join(", ", times) + "];");
 		outputFile.WriteLine("\t\tvar keys = [" + string.Join(", ", keys) + "];");
 		outputFile.WriteLine("\t\tvar lengths = [" + string.Join(", ", lengths) + "];");
-		outputFile.WriteLine("\t\tvar note_count = " + note_count + ";");
+		outputFile.WriteLine("\t\tvar bpm = " + bpm + ";");
 
 		// copy bridge code
 		StreamReader inputFile = new StreamReader("Assets/Plugins/OSMD_bridge/osmd_bridge.jslib");
@@ -54,18 +66,26 @@ public class MusicPlayer : MonoBehaviour
 			outputFile.WriteLine(inLine);
 		}
 		inputFile.Close();
+		outputFile.Close();
+	}
+#else
+	// see Plugins/OSMD_bridge/osmd_bridge.jslib
+	[DllImport("__Internal")]
+	private static extern void OSMD_update(string element_id, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm);
+#endif
+
+	private static void OSMD_finish()
+	{
+#if UNITY_EDITOR
+		StreamWriter outputFile = new StreamWriter(m_outputFilename, true);
 
 		// add HTML footer
 		outputFile.WriteLine("\t\t</script>");
 		outputFile.WriteLine("\t</body>");
 		outputFile.WriteLine("</html>");
 		outputFile.Close();
-	}
-#else
-	// see Plugins/OSMD_bridge/osmd_bridge.jslib
-	[DllImport("__Internal")]
-	private static extern void OSMD_update(uint bpm, uint[] chord_times, uint[] chord_keys, int chord_count, uint[] times, uint[] keys, uint[] lengths, int note_count);
 #endif
+	}
 
 	public uint m_samplesPerSecond = 44100U;
 	public bool m_stereo = true;
@@ -154,7 +174,10 @@ public class MusicPlayer : MonoBehaviour
 		Assert.AreEqual(chordProgressionTimes.Length, chordProgressionKeys.Length);
 		Assert.AreEqual(timeSequence.Length, keySequence.Length);
 		Assert.AreEqual(keySequence.Length, lengthSequence.Length);
-		OSMD_update(bpm, chordProgressionTimes, chordProgressionKeys, chordProgressionKeys.Length, timeSequence, keySequence, lengthSequence, keySequence.Length);
+		OSMD_start();
+		OSMD_update("osmd-chords", chordProgressionKeys.Length, chordProgressionTimes, chordProgressionKeys, Enumerable.Repeat(16U, chordProgressionKeys.Length).ToArray(), 0U);
+		OSMD_update("osmd-main", keySequence.Length, timeSequence, keySequence, lengthSequence, bpm);
+		OSMD_finish();
 	}
 
 	public void Play()
