@@ -15,6 +15,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	// TODO: convert to MidiFile?
 	private readonly MusicBlock m_musicBlock;
 	private readonly ChordProgression m_chordProgression;
+	private readonly MusicRhythm m_rhythm;
 	private readonly List<MidiEvent> m_events;
 	private readonly uint m_rootKey;
 	private readonly uint[] m_scaleSemitones;
@@ -37,6 +38,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		m_rootKey = (uint)(MusicUtility.midiMiddleAKey + MusicUtility.ScaleOffset(MusicUtility.naturalMinorScaleSemitones, (int)rootKeyIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
 		m_scaleSemitones = MusicUtility.scales[scaleIndex];
 		m_chordProgression = isScale ? new ChordProgression(new float[][] { MusicUtility.chordI, MusicUtility.chordII, MusicUtility.chordIII, MusicUtility.chordIV, MusicUtility.chordV, MusicUtility.chordVI, MusicUtility.chordVII, new float[] { 7.0f, 9.0f, 11.0f } }) : MusicUtility.chordProgressions[UnityEngine.Random.Range(0, MusicUtility.chordProgressions.Length)]; // TODO: intelligent / user-determined choice?
+		m_rhythm = MusicRhythm.Random(m_chordProgression);
 
 		// switch to the requested instrument
 		MidiEvent eventSetInstrument = new MidiEvent
@@ -125,12 +127,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	public void Display(string elementIdChords, string elementIdMain, uint bpm)
 	{
 		m_chordProgression.Display(m_scaleSemitones, elementIdChords);
-
-		// TODO: non-random rhythm
-		int rhythmLength = UnityEngine.Random.Range(4, 9);
-		MusicRhythm rhythm = new MusicRhythm(Enumerable.Repeat((uint)(1 << UnityEngine.Random.Range(0, 7)), rhythmLength).ToArray(), Enumerable.Repeat(UnityEngine.Random.Range(0.0f, 7.0f), rhythmLength).ToArray());
-		rhythm.Display(m_scaleSemitones, "osmd-rhythm");
-
+		m_rhythm.Display(m_scaleSemitones, "osmd-rhythm");
 		m_musicBlock.Display(m_rootKey, m_scaleSemitones, elementIdMain, bpm);
 	}
 }

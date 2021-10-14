@@ -15,7 +15,7 @@ mergeInto(LibraryManager.library, {
 
 		// MusicXML header
 		// TODO: use timewise rather than partwise?
-		var is_chord_progression = (bpm == 0);
+		var is_untimed = (bpm == 0);
 		var xml_str = '<?xml version="1.0" encoding="UTF-8"?>\n\
 			<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 2.0 Partwise//EN"\n\
 				"http://www.musicxml.org/dtds/partwise.dtd">\n\
@@ -28,13 +28,14 @@ mergeInto(LibraryManager.library, {
 						</midi-instrument>\n\
 					</score-part>\n\
 				</part-list>\n\
-				<part id="P1">' + (is_chord_progression ? '\n\
-			<measure print-object="no">\n\
-				<attributes print-object="no">\n\
+				<part id="P1">' + (is_untimed ? '\n\
+			<measure>\n\
+				<attributes>\n\
 					<key print-object="no"></key>\n\
 					<time print-object="no"></time>\n\
-					<clef print-object="no">\n\
-						<sign print-object="no"></sign>\n\
+					<clef>\n\
+						<sign>percussion</sign>\n\
+						<staff-lines>5</staff-lines>\n\
 					</clef>\n\
 				</attributes>\n\
 				<direction placement="above">\n\
@@ -67,8 +68,8 @@ mergeInto(LibraryManager.library, {
 					<sound tempo="' + bpm + '"/>\n\
 				</direction>');
 
-		var length_per_measure = (is_chord_progression ? Number.POSITIVE_INFINITY : 64); // TODO: account for different time signatures
-		var per_note_str = (is_chord_progression ? '\t\t\t\t\t\t<notehead>x</notehead>\n' : '');
+		var length_per_measure = (is_untimed ? Number.POSITIVE_INFINITY : 64); // TODO: account for different time signatures
+		var per_note_str = (is_untimed ? '\t\t\t\t\t\t<notehead>x</notehead>\n' : '');
 
 		// constants
 		/*const*/var sixtyfourths_per_quarter = 16;
@@ -97,6 +98,8 @@ mergeInto(LibraryManager.library, {
 			}
 
 			// note
+			var pitch_tag = (is_untimed ? 'unpitched' : 'pitch');
+			var pitch_prefix = (is_untimed ? 'display-' : '');
 			var note_semitones_from_c = key_val % semitones_per_octave;
 			var note_val = semitones_from_c.indexOf(note_semitones_from_c);
 			var semitone_offset = 0;
@@ -110,11 +113,11 @@ mergeInto(LibraryManager.library, {
 			xml_str += '\n\
 				<note>\n\
 					' + (is_chord ? '<chord/>' : '') +
-					'<pitch>\n\
-						<step>' + note_letter + '</step>\n\
+					'<' + pitch_tag + '>\n\
+						<' + pitch_prefix + 'step>' + note_letter + '</' + pitch_prefix + 'step>\n\
 						<alter>' + semitone_offset + '</alter>\n\
-						<octave>' + note_octave + '</octave>\n\
-					</pitch>\n\
+						<' + pitch_prefix + 'octave>' + note_octave + '</' + pitch_prefix + 'octave>\n\
+					</' + pitch_tag + '>\n\
 					<duration>' + length_val + '</duration>\n\
 					<voice>1</voice>\n\
 					<type>' + type_str + '</type>\n\
@@ -130,7 +133,7 @@ mergeInto(LibraryManager.library, {
 		}
 
 		// footer
-		if (!is_chord_progression) {
+		if (!is_untimed) {
 			xml_str += '\n\
 				<barline location="right">\n\
 					<bar-style>light-heavy</bar-style>\n\
