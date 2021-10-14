@@ -1,5 +1,6 @@
 using CSharpSynth.Synthesis;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.UI;
@@ -19,6 +20,7 @@ public class MusicPlayer : MonoBehaviour
 	public Text m_instrumentText;
 	public Toggle m_chordRegenToggle;
 	public Toggle m_rhythmRegenToggle;
+	public InputField[] m_noteLengthFields;
 	public InputField m_volumeField;
 
 	private StreamSynthesizer m_musicStreamSynthesizer;
@@ -82,10 +84,10 @@ public class MusicPlayer : MonoBehaviour
 			return;
 		}
 		int chosenInstrumentIdx = candidateIndices[Random.Range(0, candidateIndices.Count)];
-		m_instrumentText.text = "Current: " + m_musicStreamSynthesizer.SoundBank.getInstrument(chosenInstrumentIdx, false/*?*/).Name;
+		m_instrumentText.text = "Current:\n" + m_musicStreamSynthesizer.SoundBank.getInstrument(chosenInstrumentIdx, false/*?*/).Name;
 
 		uint bpm = uint.Parse(m_tempoField.text);
-		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, m_musicSequencer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)chosenInstrumentIdx, bpm, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn);
+		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, m_musicSequencer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)chosenInstrumentIdx, bpm, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn, m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray());
 
 		// update display
 		MusicDisplay.Start();
