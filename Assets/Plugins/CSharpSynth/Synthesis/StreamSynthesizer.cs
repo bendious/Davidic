@@ -257,9 +257,9 @@ namespace CSharpSynth.Synthesis
         //UnitySynth
         public void GetNext(float[] buffer)
         {//Call this to process the next part of audio and return it in raw form.
-//			samplesperBuffer = buffer.Length / audioChannels;
-//			sampleBuffer = new float[audioChannels, samplesperBuffer];
-//			rawBufferLength = audioChannels * samplesperBuffer * 2; //Assuming 16 bit data
+			samplesperBuffer = buffer.Length / audioChannels;
+			sampleBuffer = new float[audioChannels, samplesperBuffer];
+			rawBufferLength = audioChannels * samplesperBuffer * sizeof(float);
 			
 			ClearWorkingBuffer();
             FillWorkingBuffer();
@@ -493,7 +493,7 @@ namespace CSharpSynth.Synthesis
             }
             //initialize variables
             sampleBuffer = new float[audioChannels, samplesperBuffer];
-            rawBufferLength = audioChannels * samplesperBuffer * 2; //Assuming 16 bit data
+            rawBufferLength = audioChannels * samplesperBuffer * sizeof(float);
             // Create voice structures
             voicePool = new Voice[polyphony];
             for (int i = 0; i < polyphony; ++i)

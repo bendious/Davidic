@@ -90,8 +90,11 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	public override void SetTime(TimeSpan time)
 	{
 		// TODO: handle time changes beyond just reset-to-start?
+		if (time.Ticks != 0)
+		{
+			return;
+		}
 		m_sampleTime = (int)time.Ticks;
-		Assert.IsTrue(m_sampleTime == 0);
 		m_eventIndex = 0;
 		base.SetTime(time);
 	}
