@@ -24,7 +24,7 @@ public class MusicRhythm
 		while (sixtyFourthsLeft > 0) {
 			uint lengthNew = (uint)(1 << UnityEngine.Random.Range(0, Math.Min((int)Math.Log(sixtyFourthsLeft, 2.0f), type_shift_max) + 1)); // 1, 2, 4, 8, 16, 32, or 64, limited by remaining length // TODO: normal distribution to favor longer lengths?
 			lengths.Add(lengthNew);
-			indices.Add((float)UnityEngine.Random.Range(0, chordSizeMax));
+			indices.Add(UnityEngine.Random.Range(0, chordSizeMax)); // TODO: allow chord octave wrapping here as well as in harmonies?
 			sixtyFourthsLeft -= (int)lengthNew;
 			Assert.IsTrue(sixtyFourthsLeft >= 0);
 		}
@@ -38,6 +38,20 @@ public class MusicRhythm
 		m_lengthsSixtyFourths = lengthsSixtyFourths;
 		m_chordIndices = chordIndices;
 		Assert.AreEqual(lengthsSixtyFourths.Length, chordIndices.Length);
+	}
+
+	public List<MusicNote> Sequence(ChordProgression progression)
+	{
+		// TODO: more sophisticated compositions of rhythm & chords
+		List<MusicNote> notes = new List<MusicNote>();
+		foreach (float[] chord in progression.m_progression)
+		{
+			for (int i = 0, n = m_chordIndices.Length; i < n; ++i)
+			{
+				notes.Add(new MusicNote(new float[] { m_chordIndices[i] }, m_lengthsSixtyFourths[i], UnityEngine.Random.Range(0.5f, 1.0f), chord)); // TODO: coherent volume? pass whole progression and an index to each note?
+			}
+		}
+		return notes;
 	}
 
 	public void Display(uint[] scaleSemitones, string elementId)
