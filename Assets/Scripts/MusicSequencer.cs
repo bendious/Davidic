@@ -25,7 +25,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 
 	//--Public Methods
-	public MusicSequencer(StreamSynthesizer synth, bool isScale, uint rootKeyIndex, uint scaleIndex, uint instrumentIndex, uint bpm)
+	public MusicSequencer(StreamSynthesizer synth, MusicSequencer prevInstance, bool isScale, uint rootKeyIndex, uint scaleIndex, uint instrumentIndex, uint bpm, bool regenChords, bool regenRhythm)
 		: base(synth)
 	{
 		// initialize
@@ -36,8 +36,8 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		// determine constituent pieces
 		m_rootKey = (uint)(MusicUtility.midiMiddleAKey + MusicUtility.ScaleOffset(MusicUtility.naturalMinorScaleSemitones, (int)rootKeyIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
 		m_scaleSemitones = MusicUtility.scales[scaleIndex];
-		m_chordProgression = isScale ? new ChordProgression(new float[][] { MusicUtility.chordI, MusicUtility.chordII, MusicUtility.chordIII, MusicUtility.chordIV, MusicUtility.chordV, MusicUtility.chordVI, MusicUtility.chordVII, new float[] { 7.0f, 9.0f, 11.0f } }) : MusicUtility.chordProgressions[UnityEngine.Random.Range(0, MusicUtility.chordProgressions.Length)]; // TODO: intelligent / user-determined choice?
-		m_rhythm = isScale ? new MusicRhythm(new uint[] { MusicUtility.sixtyFourthsPerBeat / 2U }, new float[] { 0.0f }) : MusicRhythm.Random(m_chordProgression);
+		m_chordProgression = isScale ? new ChordProgression(new float[][] { MusicUtility.chordI, MusicUtility.chordII, MusicUtility.chordIII, MusicUtility.chordIV, MusicUtility.chordV, MusicUtility.chordVI, MusicUtility.chordVII, new float[] { 7.0f, 9.0f, 11.0f } }) : (prevInstance == null || regenChords ? MusicUtility.chordProgressions[UnityEngine.Random.Range(0, MusicUtility.chordProgressions.Length)] : prevInstance.m_chordProgression);
+		m_rhythm = isScale ? new MusicRhythm(new uint[] { MusicUtility.sixtyFourthsPerBeat / 2U }, new float[] { 0.0f }) : (prevInstance == null || regenRhythm ? MusicRhythm.Random(m_chordProgression) : prevInstance.m_rhythm);
 
 		// switch to the requested instrument
 		MidiEvent eventSetInstrument = new MidiEvent
