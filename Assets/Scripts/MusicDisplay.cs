@@ -30,13 +30,15 @@ public static class MusicDisplay
 	}
 
 #if UNITY_EDITOR
-	public static void Update(string element_id, string title, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm)
+	public static void Update(string element_id, string title, int key_fifths, string key_mode, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm)
 	{
 		StreamWriter outputFile = new StreamWriter(m_debugOutputFile, true);
 
 		// add "params"
 		outputFile.WriteLine("\t\tvar element_id = '" + element_id + "';");
 		outputFile.WriteLine("\t\tvar title = '" + title + "';");
+		outputFile.WriteLine("\t\tvar key_fifths = " + key_fifths + ";");
+		outputFile.WriteLine("\t\tvar key_mode = '" + key_mode + "';");
 		outputFile.WriteLine("\t\tvar note_count = " + note_count + ";");
 		outputFile.WriteLine("\t\tvar times = [" + string.Join(", ", times) + "];");
 		outputFile.WriteLine("\t\tvar keys = [" + string.Join(", ", keys) + "];");
@@ -65,7 +67,7 @@ public static class MusicDisplay
 #else
 	// see Plugins/OSMD_bridge/osmd_bridge.jslib
 	[DllImport("__Internal")]
-	public static extern void Update(string element_id, string title, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm);
+	public static extern void Update(string element_id, string title, int key_fifths, string key_mode, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm);
 #endif
 
 	public static void Finish()

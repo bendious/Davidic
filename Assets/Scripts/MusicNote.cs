@@ -41,9 +41,21 @@ public class MusicNote
 		m_chord = noteOrig.m_chord;
 	}
 
-	public List<uint> MidiKeys(uint rootKey, uint[] scaleSemitones)
+	public bool ContainsRoot()
 	{
-		return m_chordIndices.ToList().ConvertAll(index => ChordIndexToMidiKey(index, rootKey, scaleSemitones));
+		foreach (float index in m_chordIndices)
+		{
+			if (Mathf.Approximately(Utility.Modulo(ChordIndexToToneOffset(index), MusicUtility.tonesPerOctave), 0.0f))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public List<uint> MidiKeys(uint rootKey, MusicScale scale)
+	{
+		return m_chordIndices.ToList().ConvertAll(index => ChordIndexToMidiKey(index, rootKey, scale));
 	}
 
 	public uint KeyCount
@@ -56,17 +68,17 @@ public class MusicNote
 		get { return (uint)m_chord.Length; }
 	}
 
-	public uint LengthSixtyFourths { get; }
+	public uint LengthSixtyFourths { get; set; }
 	public float VolumePct { get; }
 
-	public List<MidiEvent> ToMidiEvents(uint rootNote, uint[] scaleSemitones, uint startSixtyFourths, uint samplesPerSixtyFourth)
+	public List<MidiEvent> ToMidiEvents(uint rootNote, MusicScale scale, uint startSixtyFourths, uint samplesPerSixtyFourth)
 	{
 		List<MidiEvent> events = new List<MidiEvent>();
 
 		uint startSample = startSixtyFourths * samplesPerSixtyFourth;
 		foreach (float index in m_chordIndices)
 		{
-			uint keyCur = ChordIndexToMidiKey(index, rootNote, scaleSemitones);
+			uint keyCur = ChordIndexToMidiKey(index, rootNote, scale);
 
 			MidiEvent eventOn = new MidiEvent
 			{
@@ -86,7 +98,7 @@ public class MusicNote
 			{
 				deltaTime = endSample,
 				midiChannelEvent = MidiHelper.MidiChannelEvent.Note_Off,
-				parameter1 = (byte)ChordIndexToMidiKey(index, rootNote, scaleSemitones),
+				parameter1 = (byte)ChordIndexToMidiKey(index, rootNote, scale),
 				channel = 0,
 			};
 			events.Add(eventOff);
@@ -96,17 +108,25 @@ public class MusicNote
 	}
 
 
-	private uint ChordIndexToMidiKey(float index, uint rootNote, uint[] scaleSemitones)
+	private float ChordIndexToToneOffset(float index)
 	{
+		float indexFractAbs = Mathf.Abs(Utility.Fract(index));
 		int chordSizeI = (int)ChordCount;
-		float chordSizeF = (float)chordSizeI;
+		float chordSizeF = chordSizeI;
 		Assert.IsTrue(chordSizeF > 0.0f);
 		float indexMod = Utility.Modulo(index, chordSizeF);
 		Assert.IsTrue(indexMod < chordSizeF);
+
+		return (indexFractAbs <= 0.333f || indexFractAbs >= 0.667f) ? m_chord[(uint)Mathf.Round(indexMod)] : (m_chord[(int)Mathf.Floor(indexMod)] + m_chord[Utility.Modulo((int)Math.Ceiling(indexMod), chordSizeI)]) * 0.5f; // TODO: better way of picking off-chord notes?
+	}
+
+	private uint ChordIndexToMidiKey(float index, uint rootNote, MusicScale scale)
+	{
+		float chordSizeF = (int)ChordCount;
+		Assert.IsTrue(chordSizeF > 0.0f);
 		int octaveOffset = (int)(index / chordSizeF) + (index < 0.0f ? -1 : 0);
-		float indexFractAbs = Mathf.Abs(Utility.Fract(index));
-		float tonePreOctave = (indexFractAbs <= 0.333f || indexFractAbs >= 0.667f) ? m_chord[(uint)Mathf.Round(indexMod)] : (m_chord[(int)Mathf.Floor(indexMod)] + m_chord[Utility.Modulo((int)Math.Ceiling(indexMod), chordSizeI)]) * 0.5f; // TODO: better way of picking off-chord notes?
-		int totalOffset = MusicUtility.TonesToSemitones(tonePreOctave, scaleSemitones) + octaveOffset * (int)MusicUtility.semitonesPerOctave;
+		float tonePreOctave = ChordIndexToToneOffset(index);
+		int totalOffset = MusicUtility.TonesToSemitones(tonePreOctave, scale) + octaveOffset * (int)MusicUtility.semitonesPerOctave;
 		return (uint)((int)rootNote + totalOffset);
 	}
 }

@@ -4,6 +4,7 @@ using UnityEngine.Assertions;
 
 public static class MusicUtility
 {
+	public const float tonesPerOctave = 7.0f; // NOTE that this excludes the first note of the next octave even though that is often included, e.g. in scales
 	public const uint semitonesPerOctave = 12U;
 	public const uint secondsPerMinute = 60U;
 	public const uint sixtyFourthsPerMeasure = 64U;
@@ -13,46 +14,46 @@ public static class MusicUtility
 	public const uint midiMiddleCKey = 60U;
 
 
-	public static readonly uint[] majorScaleSemitones = {
+	public static readonly MusicScale majorScale = new MusicScale(new uint[] {
 		0, 2, 4, 5, 7, 9, 11
-	};
-	public static readonly uint[] naturalMinorScaleSemitones = {
+	}, 0, "major");
+	public static readonly MusicScale naturalMinorScale = new MusicScale(new uint[] {
 		0, 2, 3, 5, 7, 8, 10
-	};
-	public static readonly uint[] harmonicMinorScaleSemitones = {
+	}, 0, "minor");
+	public static readonly MusicScale harmonicMinorScale = new MusicScale(new uint[] {
 		0, 2, 3, 5, 7, 8, 11
-	};
-	//public static readonly uint[] melodicMinorScaleSemitones = {
+	}, 0, "minor");
+	//public static readonly MusicScale melodicMinorScale = new MusicScale(new uint[] {
 	//	0, 2, 3, 5, 7, 9, 11 ascending
 	//	0, 2, 3, 5, 7, 8, 10 descending
-	//};
-	public static readonly uint[] dorianModeSemitones = {
+	//}, 0, "minor");
+	public static readonly MusicScale dorianMode = new MusicScale(new uint[] {
 		0, 2, 3, 5, 7, 9, 10
-	};
+	}, 0, "dorian");
 	// Ionian mode is the same as the major scale
-	public static readonly uint[] phrygianModeSemitones = {
+	public static readonly MusicScale phrygianMode = new MusicScale(new uint[] {
 		0, 1, 3, 5, 7, 8, 10
-	};
-	public static readonly uint[] lydianModeSemitones = {
+	}, 0, "phrygian");
+	public static readonly MusicScale lydianMode = new MusicScale(new uint[] {
 		0, 2, 4, 6, 7, 9, 11
-	};
-	public static readonly uint[] mixolydianModeSemitones = {
+	}, 0, "lydian");
+	public static readonly MusicScale mixolydianMode = new MusicScale(new uint[] {
 		0, 2, 4, 5, 7, 9, 10
-	};
+	}, 0, "mixolydian");
 	// Aeolian mode is the same as natural minor scale
-	public static readonly uint[] locrianModeSemitones = {
+	public static readonly MusicScale locrianMode = new MusicScale(new uint[] {
 		0, 1, 3, 5, 6, 8, 10
-	};
-	public static readonly uint[][] scales = {
-		majorScaleSemitones,
-		naturalMinorScaleSemitones,
-		harmonicMinorScaleSemitones,
-		//melodicMinorScaleSemitones,
-		dorianModeSemitones,
-		phrygianModeSemitones,
-		lydianModeSemitones,
-		mixolydianModeSemitones,
-		locrianModeSemitones
+	}, 0, "locrian");
+	public static readonly MusicScale[] scales = {
+		majorScale,
+		naturalMinorScale,
+		harmonicMinorScale,
+		//melodicMinorScale,
+		dorianMode,
+		phrygianMode,
+		lydianMode,
+		mixolydianMode,
+		locrianMode,
 	};
 
 
@@ -121,23 +122,23 @@ public static class MusicUtility
 	};
 
 
-	public static int ScaleOffset(uint[] scaleSemitones, int noteIndex)
+	public static int ScaleOffset(MusicScale scale, int noteIndex)
 	{
-		int scaleLength = scaleSemitones.Length;
+		int scaleLength = scale.m_semitones.Length;
 		int octaveOffset = noteIndex / scaleLength - (noteIndex < 0 ? 1 : 0);
-		return octaveOffset * (int)MusicUtility.semitonesPerOctave + (int)scaleSemitones[Utility.Modulo(noteIndex, scaleLength)];
+		return octaveOffset * (int)semitonesPerOctave + (int)scale.m_semitones[Utility.Modulo(noteIndex, scaleLength)];
 	}
 
-	public static int TonesToSemitones(float tonesFromRoot, uint[] scaleSemitones)
+	public static int TonesToSemitones(float tonesFromRoot, MusicScale scale)
 	{
 		// NOTE that due to note averaging for off-chord notes, tonesFromRoot can have unexpected fractional values, so we "round" to the nearest half tone to turn them into standard naturals/flats/sharps
-		float scaleLength = scaleSemitones.Length;
+		float scaleLength = scale.m_semitones.Length;
 		float tonesMod = Utility.Modulo(tonesFromRoot, scaleLength);
 		Assert.IsTrue(tonesMod >= 0.0f && tonesMod < scaleLength);
 		int octaveOffset = (int)(tonesFromRoot / scaleLength) + (tonesFromRoot < 0.0f ? -1 : 0);
 		float fractAbs = Mathf.Abs(Utility.Fract(tonesFromRoot));
 		int halftoneOffset = (fractAbs <= 0.333f || fractAbs >= 0.667f) ? 0 : (tonesFromRoot < 0.0f ? -1 : 1);
 
-		return (int)(scaleSemitones[(uint)tonesMod] + octaveOffset * (int)semitonesPerOctave + halftoneOffset);
+		return (int)(scale.m_semitones[(uint)tonesMod] + octaveOffset * (int)semitonesPerOctave + halftoneOffset);
 	}
 }

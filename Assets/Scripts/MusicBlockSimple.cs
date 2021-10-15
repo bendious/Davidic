@@ -31,11 +31,11 @@ public class MusicBlockSimple : MusicBlock
 		return list;
 	}
 
-	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, uint[] scaleSemitones, uint samplesPerSixtyFourth)
+	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth)
 	{
 		uint sixtyFourthsItr = startSixtyFourths;
 		return ListFromNotes(note => {
-			List<MidiEvent> newEvents = note.ToMidiEvents(rootKey, scaleSemitones, sixtyFourthsItr, samplesPerSixtyFourth);
+			List<MidiEvent> newEvents = note.ToMidiEvents(rootKey, scale, sixtyFourthsItr, samplesPerSixtyFourth);
 			sixtyFourthsItr += note.LengthSixtyFourths;
 			return newEvents;
 		});

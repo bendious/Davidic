@@ -58,15 +58,15 @@ public class MusicRhythm
 		return notes;
 	}
 
-	public void Display(uint[] scaleSemitones, string elementId)
+	public void Display(MusicScale scale, string elementId)
 	{
 		int noteCount = m_lengthsSixtyFourths.Length;
 		uint[] times = Enumerable.Range(0, noteCount).Select(i => (uint)i).ToArray();
-		uint[] keys = m_chordIndices.Select(index => MusicUtility.midiMiddleCKey + (uint)MusicUtility.TonesToSemitones(index, scaleSemitones)).ToArray();
+		uint[] keys = m_chordIndices.Select(index => MusicUtility.midiMiddleCKey + (uint)MusicUtility.TonesToSemitones(index, scale)).ToArray();
 
 		Assert.AreEqual(noteCount, times.Length);
 		Assert.AreEqual(noteCount, keys.Length);
 
-		MusicDisplay.Update(elementId, "Rhythm:", noteCount, times, keys, m_lengthsSixtyFourths, 0U); // NOTE that the bpm of 0 tells the update to use chord progression special formatting
+		MusicDisplay.Update(elementId, "Rhythm:", scale.m_fifths, scale.m_mode, noteCount, times, keys, m_lengthsSixtyFourths, 0U); // NOTE that the bpm of 0 tells the update to use chord progression special formatting
 	}
 }

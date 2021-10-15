@@ -1,5 +1,5 @@
 mergeInto(LibraryManager.library, {
-	Update: function (element_id, title, note_count, times, keys, lengths, bpm) {
+	Update: function (element_id, title, key_fifths, key_mode, note_count, times, keys, lengths, bpm) {
 		const inputArrayUint = function (array, index) {
 			return HEAPU32[(array >> 2) + index]; // see https://docs.unity3d.com/Manual/webgl-interactingwithbrowserscripting.html
 		};
@@ -46,8 +46,8 @@ mergeInto(LibraryManager.library, {
 			<measure>\n\
 				<attributes>\n\
 					<key>\n\
-						<fifths>0</fifths>\n\
-						<mode>major</mode>\n\
+						<fifths>' + key_fifths + '</fifths>\n\
+						<mode>' + Pointer_stringify(key_mode) + '</mode>\n\
 					</key>\n\
 					<time>\n\
 						<beats>4</beats>\n\
@@ -106,7 +106,7 @@ mergeInto(LibraryManager.library, {
 			var note_val = semitones_from_c.indexOf(note_semitones_from_c);
 			var semitone_offset = 0;
 			if (note_val == -1) {
-				semitone_offset = 1; // TODO: pick between sharp/flat based on major/minor key
+				semitone_offset = (key_fifths < 0) ? -1 : 1;
 				note_val = semitones_from_c.indexOf(note_semitones_from_c - semitone_offset);
 			}
 			var note_letter = String.fromCharCode(((note_val + 2) % keys_per_octave) + 'A'.charCodeAt(0)); // see https://stackoverflow.com/questions/36129721/convert-number-to-alphabet-letter
