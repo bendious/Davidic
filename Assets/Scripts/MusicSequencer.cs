@@ -25,7 +25,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 
 	//--Public Methods
-	public MusicSequencer(StreamSynthesizer synth, MusicSequencer prevInstance, bool isScale, uint rootKeyIndex, uint scaleIndex, uint instrumentIndex, uint bpm, bool regenChords, bool regenRhythm, float[] noteLengthWeights)
+	public MusicSequencer(StreamSynthesizer synth, MusicSequencer prevInstance, bool isScale, uint rootKeyIndex, uint scaleIndex, uint instrumentIndex, uint bpm, bool regenChords, bool regenRhythm, float[] noteLengthWeights, uint harmoniesMax)
 		: base(synth)
 	{
 		// initialize
@@ -51,9 +51,9 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 		// sequence into notes, organize into block(s)
 		m_musicBlock = new MusicBlockSimple(m_rhythm.Sequence(m_chordProgression).ToArray());
-		if (UnityEngine.Random.value > 0.5f)
+		if (harmoniesMax > 0U)
 		{
-			m_musicBlock = new MusicBlockHarmony(m_musicBlock);
+			m_musicBlock = new MusicBlockHarmony(m_musicBlock, harmoniesMax);
 		}
 		m_events.AddRange(m_musicBlock.ToMidiEvents(0U, m_rootKey, m_scaleSemitones, m_samplesPerSixtyFourth));
 	}

@@ -2,6 +2,7 @@ using CSharpSynth.Midi;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Assertions;
 
 
 public class MusicBlockHarmony : MusicBlock
@@ -9,8 +10,9 @@ public class MusicBlockHarmony : MusicBlock
 	private readonly MusicBlock[] m_children;
 
 
-	public MusicBlockHarmony(MusicBlock melody)
+	public MusicBlockHarmony(MusicBlock melody, uint harmoniesMax)
 	{
+		Assert.IsTrue(harmoniesMax > 0U);
 		List<MusicNote> harmonyNotes = new List<MusicNote>();
 		foreach (NoteTimePair noteTime in melody.GetNotes(0U))
 		{
@@ -18,7 +20,7 @@ public class MusicBlockHarmony : MusicBlock
 			MusicNote note = noteTime.m_note;
 			int chordSize = (int)note.ChordCount;
 			List<float> offsets = new List<float>();
-			for (uint i = 0, n = (uint)UnityEngine.Random.Range(1, 3); i < n; ++i)
+			for (uint offsetIdx = 0, offsetCount = harmoniesMax; offsetIdx < offsetCount; ++offsetIdx)
 			{
 				offsets.Add(UnityEngine.Random.Range(-chordSize, chordSize)); // NOTE that MusicNote() handles preventing duplicates
 			}

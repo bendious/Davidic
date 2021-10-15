@@ -81,6 +81,7 @@ mergeInto(LibraryManager.library, {
 		// accumulators / inter-note memory
 		var time_val_prev = -1;
 		var length_total = 0;
+		var beam_before = false;
 
 		// per-note
 		for (var i = 0; i < note_count; ++i) {
@@ -91,7 +92,8 @@ mergeInto(LibraryManager.library, {
 			var is_chord = (time_val == time_val_prev);
 
 			// measure bar if appropriate
-			if (!is_chord && length_total > 0 && length_total % length_per_measure == 0) { // TODO: handle notes crossing measures?
+			var new_measure = (!is_chord && length_total > 0 && length_total % length_per_measure == 0); // TODO: handle notes crossing measures?
+			if (new_measure) {
 				xml_str += '\n\
 					</measure>\n\
 					<measure>';
@@ -110,6 +112,11 @@ mergeInto(LibraryManager.library, {
 			var note_letter = String.fromCharCode(((note_val + 2) % keys_per_octave) + 'A'.charCodeAt(0)); // see https://stackoverflow.com/questions/36129721/convert-number-to-alphabet-letter
 			var note_octave = Math.floor(key_val / semitones_per_octave) - 1; // NOTE offset: middle-C (MIDI key 60) in MusicXML is the start of octave 4 rather than 5
 			var type_str = (length_val == 1 ? '64th' : length_val == 2 ? '32nd' : length_val == 4 ? '16th' : length_val == 8 ? 'eighth' : length_val == sixtyfourths_per_quarter ? 'quarter' : length_val == 32 ? 'half' : length_val == 64 ? 'whole' : 'ERROR');
+			beam_before = !new_measure && (is_chord ? beam_before : i > 0 && length_val <= 8 && inputArrayUint(lengths, i - 1) == length_val);
+			var j = i + 1;
+			for (; j < note_count && length_val <= 8 && inputArrayUint(times, j) == time_val; ++j) {}
+			var beam_after = (j < note_count && length_val <= 8 && inputArrayUint(lengths, j) == length_val); // TODO: detect measure end?
+			var beam_str = (beam_before && beam_after) ? 'continue' : (beam_before ? 'end' : (beam_after ? 'begin' : ''));
 			xml_str += '\n\
 				<note>\n\
 					' + (is_chord ? '<chord/>' : '') +
@@ -121,10 +128,11 @@ mergeInto(LibraryManager.library, {
 					<duration>' + length_val + '</duration>\n\
 					<voice>1</voice>\n\
 					<type>' + type_str + '</type>\n\
+					<beam number="1">' + beam_str + '</beam>\n\
 					<accidental>' + (semitone_offset > 0 ? 'sharp' : semitone_offset < 0 ? 'flat' : '') + '</accidental>\n'
 					+ per_note_str + '\
 				</note>';
-			// TODO: <beam>/<dot/>/<{p/mp/mf/f}/>
+			// TODO: <dot/>/<{p/mp/mf/f}/>?
 
 			time_val_prev = time_val;
 			if (!is_chord) {

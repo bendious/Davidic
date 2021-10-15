@@ -21,6 +21,7 @@ public class MusicPlayer : MonoBehaviour
 	public Toggle m_chordRegenToggle;
 	public Toggle m_rhythmRegenToggle;
 	public InputField[] m_noteLengthFields;
+	public InputField m_harmonyCountField;
 	public InputField m_volumeField;
 
 	private StreamSynthesizer m_musicStreamSynthesizer;
@@ -87,7 +88,7 @@ public class MusicPlayer : MonoBehaviour
 		m_instrumentText.text = "Current:\n" + m_musicStreamSynthesizer.SoundBank.getInstrument(chosenInstrumentIdx, false/*?*/).Name;
 
 		uint bpm = uint.Parse(m_tempoField.text);
-		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, m_musicSequencer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)chosenInstrumentIdx, bpm, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn, m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray());
+		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, m_musicSequencer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)chosenInstrumentIdx, bpm, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn, m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray(), uint.Parse(m_harmonyCountField.text));
 
 		// update display
 		MusicDisplay.Start();

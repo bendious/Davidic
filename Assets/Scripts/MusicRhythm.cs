@@ -13,9 +13,9 @@ public class MusicRhythm
 	public static MusicRhythm Random(ChordProgression chords, float[] noteLengthWeights)
 	{
 		/*const*/ int type_shift_max = (int)Math.Log(MusicUtility.sixtyFourthsPerMeasure, 2.0);
-		const int randomMeasuresMin = 1; // NOTE that random lengths are kept to even measure counts
-		const int randomMeasuresMax = 2;
-		int sixtyFourthsLeft = (int)MusicUtility.sixtyFourthsPerMeasure * UnityEngine.Random.Range(randomMeasuresMin, randomMeasuresMax + 1);
+		const int randomHalfMeasuresMin = 1;
+		const int randomHalfMeasuresMax = 4;
+		int sixtyFourthsLeft = (int)MusicUtility.sixtyFourthsPerMeasure / 2 * UnityEngine.Random.Range(randomHalfMeasuresMin, randomHalfMeasuresMax + 1);
 
 		// TODO: bring back chord_type?
 		List<uint> lengths = new List<uint>();
