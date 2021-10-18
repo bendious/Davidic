@@ -2,6 +2,7 @@ using CSharpSynth.Midi;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Assertions;
 
 
 public class MusicBlockRepeat : MusicBlock
@@ -12,6 +13,8 @@ public class MusicBlockRepeat : MusicBlock
 
 	public MusicBlockRepeat(MusicBlock[] children, uint[] schedule)
 	{
+		Assert.AreNotEqual(children.Length, 0);
+		Assert.IsTrue(schedule.Length >= children.Length);
 		m_children = children;
 		m_schedule = schedule;
 	}
@@ -39,6 +42,16 @@ public class MusicBlockRepeat : MusicBlock
 			sixtyFourthsItr += block.SixtyFourthsTotal();
 			return list;
 		});
+	}
+
+	public override MusicBlock SplitNotes()
+	{
+		return new MusicBlockRepeat(m_children.Select(block => block.SplitNotes()).ToArray(), m_schedule);
+	}
+
+	public override MusicBlock MergeNotes()
+	{
+		return new MusicBlockRepeat(m_children.Select(block => block.MergeNotes()).ToArray(), m_schedule);
 	}
 
 

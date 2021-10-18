@@ -80,7 +80,9 @@ mergeInto(LibraryManager.library, {
 
 		// accumulators / inter-note memory
 		var time_val_prev = -1;
+		var length_val_prev = -1;
 		var length_total = 0;
+		var overlap_amount = 0; // TODO: support more than two overlapping voices?
 		var beam_before = false;
 
 		// per-note
@@ -89,10 +91,20 @@ mergeInto(LibraryManager.library, {
 			var key_val = inputArrayUint(keys, i);
 			var length_val = inputArrayUint(lengths, i);
 			console.log("time " + time_val + ", key " + key_val + ", length " + length_val); // TEMP?
-			var is_chord = (time_val == time_val_prev);
+			var is_chord = (time_val == time_val_prev && length_val == length_val_prev);
+
+			// overlap w/ previous note(s) if necessary
+			if (!is_chord && time_val < time_val_prev + length_val_prev) {
+				overlap_amount = time_val_prev + length_val_prev - time_val;
+				length_total -= overlap_amount;
+				xml_str += '\n\
+					<backup>\n\
+						<duration>' + overlap_amount + '</duration>\n\
+					</backup>';
+			}
 
 			// measure bar if appropriate
-			var new_measure = (!is_chord && length_total > 0 && length_total % length_per_measure == 0); // TODO: handle notes crossing measures?
+			var new_measure = (!is_chord && overlap_amount <= 0 && length_total > 0 && length_total % length_per_measure == 0); // TODO: handle notes crossing measures?
 			if (new_measure) {
 				xml_str += '\n\
 					</measure>\n\
@@ -126,7 +138,7 @@ mergeInto(LibraryManager.library, {
 						<' + pitch_prefix + 'octave>' + note_octave + '</' + pitch_prefix + 'octave>\n\
 					</' + pitch_tag + '>\n\
 					<duration>' + length_val + '</duration>\n\
-					<voice>1</voice>\n\
+					<voice>' + (overlap_amount > 0 ? 2 : 1) + '</voice>\n\
 					<type>' + type_str + '</type>\n\
 					<beam number="1">' + beam_str + '</beam>\n\
 					<accidental>' + (semitone_offset > 0 ? 'sharp' : semitone_offset < 0 ? 'flat' : '') + '</accidental>\n'
@@ -135,9 +147,11 @@ mergeInto(LibraryManager.library, {
 			// TODO: <dot/>/<{p/mp/mf/f}/>?
 
 			time_val_prev = time_val;
+			length_val_prev = length_val;
 			if (!is_chord) {
 				length_total += length_val;
 			}
+			overlap_amount -= length_val;
 		}
 
 		// footer

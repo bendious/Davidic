@@ -6,22 +6,24 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 
-public class MusicNote
+public class MusicNote : MusicBlock
 {
 	private readonly float[] m_chordIndices;
 	private readonly float[] m_chord;
 
 
-	public MusicNote(float[] chordIndices, uint lengthSixtyFourths, float volumePctIn, float[] chord)
+	public MusicNote(float[] chordIndices, uint lengthSixtyFourths, float volumePct, float[] chord)
 	{
 		// TODO: check for / remove chord/index duplicates?
+		Assert.AreNotEqual(chordIndices.Length, 0);
+		Assert.AreNotEqual(chord.Length, 0);
 		m_chordIndices = chordIndices;
 		LengthSixtyFourths = lengthSixtyFourths;
-		VolumePct = volumePctIn;
+		VolumePct = volumePct;
 		m_chord = chord;
 	}
 
-	public MusicNote(MusicNote noteOrig, float[] indexOffsets)
+	public MusicNote(MusicNote noteOrig, float[] indexOffsets, bool checkOrigDuplicates)
 	{
 		List<float> indicesCombined = new List<float>();
 		foreach (float index in noteOrig.m_chordIndices)
@@ -29,16 +31,86 @@ public class MusicNote
 			foreach (float offset in indexOffsets)
 			{
 				float indexNew = index + offset;
-				if (!noteOrig.m_chordIndices.Contains(indexNew))
+				if (!(checkOrigDuplicates && noteOrig.m_chordIndices.Contains(indexNew)))
 				{
 					indicesCombined.Add(indexNew);
 				}
 			}
 		}
 		m_chordIndices = indicesCombined.Distinct().ToArray();
+		Assert.AreNotEqual(m_chordIndices.Length, 0);
 		LengthSixtyFourths = noteOrig.LengthSixtyFourths;
 		VolumePct = noteOrig.VolumePct;
 		m_chord = noteOrig.m_chord;
+	}
+
+	public override uint SixtyFourthsTotal()
+	{
+		return LengthSixtyFourths;
+	}
+
+	public override List<NoteTimePair> GetNotes(uint timeOffset)
+	{
+		return new List<NoteTimePair> { new NoteTimePair { m_note = this, m_time = timeOffset } };
+	}
+
+	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth)
+	{
+		List<MidiEvent> events = new List<MidiEvent>();
+
+		uint startSample = startSixtyFourths * samplesPerSixtyFourth;
+		foreach (float index in m_chordIndices)
+		{
+			uint keyCur = ChordIndexToMidiKey(index, rootKey, scale);
+
+			MidiEvent eventOn = new MidiEvent
+			{
+				deltaTime = startSample,
+				midiChannelEvent = MidiHelper.MidiChannelEvent.Note_On,
+				parameter1 = (byte)keyCur,
+				parameter2 = (byte)(VolumePct * 100), // velocity
+				channel = 0,
+			};
+			events.Add(eventOn);
+		}
+
+		uint endSample = (startSixtyFourths + LengthSixtyFourths) * samplesPerSixtyFourth - 1U; // -1 to ensure stopping before starting again for adjacent same-key notes // TODO: leave noticable gaps between notes? staccato/legato/etc?
+		foreach (float index in m_chordIndices)
+		{
+			MidiEvent eventOff = new MidiEvent
+			{
+				deltaTime = endSample,
+				midiChannelEvent = MidiHelper.MidiChannelEvent.Note_Off,
+				parameter1 = (byte)ChordIndexToMidiKey(index, rootKey, scale),
+				channel = 0,
+			};
+			events.Add(eventOff);
+		}
+
+		return events;
+	}
+
+	public override MusicBlock SplitNotes()
+	{
+		if (LengthSixtyFourths < MusicUtility.sixtyFourthsPerBeat || UnityEngine.Random.value < 0.5f) // TODO: better conditions?
+		{
+			return this;
+		}
+		int splitCount = 2 << UnityEngine.Random.Range(0, 4); // TODO: take note length weights into account?
+		uint splitLength = LengthSixtyFourths / (uint)splitCount;
+		Assert.AreNotEqual(splitLength, 0U);
+		MusicNote splitNote = new MusicNote(m_chordIndices, splitLength, VolumePct, m_chord);
+		List<MusicNote> splitNotes = Enumerable.Repeat(splitNote, splitCount).ToList();
+		for (int i = 0, n = splitNotes.Count; i < n; ++i)
+		{
+			splitNotes[i] = new MusicNote(splitNotes[i], new float[] { UnityEngine.Random.Range(0, m_chordIndices.Length) }, false);
+		}
+		return new MusicBlockSimple(splitNotes.ToArray());
+	}
+
+	public override MusicBlock MergeNotes()
+	{
+		return this;
 	}
 
 	public bool ContainsRoot()
@@ -70,42 +142,6 @@ public class MusicNote
 
 	public uint LengthSixtyFourths { get; set; }
 	public float VolumePct { get; }
-
-	public List<MidiEvent> ToMidiEvents(uint rootNote, MusicScale scale, uint startSixtyFourths, uint samplesPerSixtyFourth)
-	{
-		List<MidiEvent> events = new List<MidiEvent>();
-
-		uint startSample = startSixtyFourths * samplesPerSixtyFourth;
-		foreach (float index in m_chordIndices)
-		{
-			uint keyCur = ChordIndexToMidiKey(index, rootNote, scale);
-
-			MidiEvent eventOn = new MidiEvent
-			{
-				deltaTime = startSample,
-				midiChannelEvent = MidiHelper.MidiChannelEvent.Note_On,
-				parameter1 = (byte)keyCur,
-				parameter2 = (byte)(VolumePct * 100), // velocity
-				channel = 0,
-			};
-			events.Add(eventOn);
-		}
-
-		uint endSample = (startSixtyFourths + LengthSixtyFourths) * samplesPerSixtyFourth;
-		foreach (float index in m_chordIndices)
-		{
-			MidiEvent eventOff = new MidiEvent
-			{
-				deltaTime = endSample,
-				midiChannelEvent = MidiHelper.MidiChannelEvent.Note_Off,
-				parameter1 = (byte)ChordIndexToMidiKey(index, rootNote, scale),
-				channel = 0,
-			};
-			events.Add(eventOff);
-		}
-
-		return events;
-	}
 
 
 	private float ChordIndexToToneOffset(float index)

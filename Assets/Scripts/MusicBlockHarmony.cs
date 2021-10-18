@@ -14,17 +14,17 @@ public class MusicBlockHarmony : MusicBlock
 	{
 		Assert.IsTrue(harmoniesMax > 0U);
 		List<MusicNote> harmonyNotes = new List<MusicNote>();
-		foreach (NoteTimePair noteTime in melody.GetNotes(0U))
+		List<NoteTimePair> melodyNotes = (UnityEngine.Random.value < 0.5f ? melody.MergeNotes().SplitNotes()/*TODO*/ : melody).GetNotes(0U);
+		foreach (NoteTimePair noteTime in melodyNotes)
 		{
-			// TODO: split/merge melody notes
 			MusicNote note = noteTime.m_note;
 			int chordSize = (int)note.ChordCount;
 			List<float> offsets = new List<float>();
 			for (uint offsetIdx = 0, offsetCount = harmoniesMax; offsetIdx < offsetCount; ++offsetIdx)
 			{
-				offsets.Add(UnityEngine.Random.Range(-chordSize, chordSize)); // NOTE that MusicNote() handles preventing duplicates
+				offsets.Add(UnityEngine.Random.Range(1, chordSize) * (UnityEngine.Random.value < 0.5f ? -1 : 1)); // NOTE that MusicNote() handles preventing duplicates, but we still avoid offsets of 0 to prevent creating empty notes
 			}
-			harmonyNotes.Add(new MusicNote(note, offsets.ToArray()));
+			harmonyNotes.Add(new MusicNote(note, offsets.ToArray(), true));
 		}
 		m_children = new MusicBlock[] { melody, new MusicBlockSimple(harmonyNotes.ToArray()) };
 	}
@@ -36,7 +36,7 @@ public class MusicBlockHarmony : MusicBlock
 
 	public override List<NoteTimePair> GetNotes(uint timeOffset)
 	{
-		return CombineFromChildren(block => block.GetNotes(timeOffset), (a, b) => Enumerable.Concat(a, b).ToList(), list => list.Sort((a, b) => a.m_time.CompareTo(b.m_time)));
+		return CombineFromChildren(block => block.GetNotes(timeOffset), (a, b) => Enumerable.Concat(a, b).ToList(), list => list.Sort((a, b) => NoteSortCompare(a.m_time, b.m_time, a.m_note.LengthSixtyFourths, b.m_note.LengthSixtyFourths)));
 	}
 
 	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth)
@@ -44,6 +44,21 @@ public class MusicBlockHarmony : MusicBlock
 		return CombineFromChildren(block => block.ToMidiEvents(startSixtyFourths, rootKey, scale, samplesPerSixtyFourth), (a, b) => Enumerable.Concat(a, b).ToList(), list => list.Sort((a, b) => a.deltaTime.CompareTo(b.deltaTime)));
 	}
 
+	public override MusicBlock SplitNotes()
+	{
+		return new MusicBlockHarmony(m_children.Select(block => block.SplitNotes()).ToArray());
+	}
+
+	public override MusicBlock MergeNotes()
+	{
+		return new MusicBlockHarmony(m_children.Select(block => block.MergeNotes()).ToArray());
+	}
+
+
+	private MusicBlockHarmony(MusicBlock[] children)
+	{
+		m_children = children;
+	}
 
 	private T CombineFromChildren<T>(Func<MusicBlock, T> blockFunc, Func<T, T, T> combineFunc, Action<T> finalFunc)
 	{
@@ -55,5 +70,15 @@ public class MusicBlockHarmony : MusicBlock
 		}
 		finalFunc?.Invoke(outVal);
 		return outVal;
+	}
+
+	private int NoteSortCompare(uint timeA, uint timeB, uint lengthA, uint lengthB)
+	{
+		int timeCompare = timeA.CompareTo(timeB);
+		if (timeCompare != 0)
+		{
+			return timeCompare;
+		}
+		return lengthB.CompareTo(lengthA); // NOTE the reversed order since we want LONGER notes sorted earlier
 	}
 }

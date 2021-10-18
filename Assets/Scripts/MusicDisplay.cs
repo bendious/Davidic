@@ -1,7 +1,9 @@
 using System.IO;
+using System.Linq;
 #if !UNITY_EDITOR
 using System.Runtime.InteropServices;
 #endif
+using UnityEngine.Assertions;
 
 
 public static class MusicDisplay
@@ -32,6 +34,8 @@ public static class MusicDisplay
 #if UNITY_EDITOR
 	public static void Update(string element_id, string title, int key_fifths, string key_mode, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm)
 	{
+		Assert.IsFalse(lengths.Contains(0U));
+
 		StreamWriter outputFile = new StreamWriter(m_debugOutputFile, true);
 
 		// add "params"

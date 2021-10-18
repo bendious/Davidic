@@ -18,6 +18,9 @@ public abstract class MusicBlock
 
 	public abstract List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth);
 
+	public abstract MusicBlock SplitNotes();
+	public abstract MusicBlock MergeNotes();
+
 	public void Display(uint rootKey, MusicScale scale, string element_id, uint bpm)
 	{
 		List<NoteTimePair> noteTimeSequence = GetNotes(0U);

@@ -2,52 +2,62 @@ using CSharpSynth.Midi;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Assertions;
 
 
 public class MusicBlockSimple : MusicBlock
 {
-	private readonly MusicNote[] m_notes;
+	private readonly MusicBlock[] m_blocks;
 
 
-	public MusicBlockSimple(MusicNote[] notes)
+	public MusicBlockSimple(MusicBlock[] blocks)
 	{
-		m_notes = notes;
+		Assert.AreNotEqual(blocks.Length, 0);
+		m_blocks = blocks;
 	}
 
 	public override uint SixtyFourthsTotal()
 	{
-		return ListFromNotes(note => new List<uint> { note.LengthSixtyFourths }).Aggregate((a, b) => a + b);
+		return ListFromBlocks(block => new List<uint> { block.SixtyFourthsTotal() }).Aggregate((a, b) => a + b);
 	}
 
 	public override List<NoteTimePair> GetNotes(uint timeOffset)
 	{
-		List<NoteTimePair> list = new List<NoteTimePair>();
 		uint timeItr = timeOffset;
-		foreach (MusicNote note in m_notes)
-		{
-			list.Add(new NoteTimePair { m_note = note, m_time = timeItr });
-			timeItr += note.LengthSixtyFourths;
-		}
-		return list;
+		return ListFromBlocks(block => {
+			List<NoteTimePair> list = block.GetNotes(timeItr);
+			timeItr += block.SixtyFourthsTotal();
+			return list;
+		});
 	}
 
 	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth)
 	{
 		uint sixtyFourthsItr = startSixtyFourths;
-		return ListFromNotes(note => {
-			List<MidiEvent> newEvents = note.ToMidiEvents(rootKey, scale, sixtyFourthsItr, samplesPerSixtyFourth);
-			sixtyFourthsItr += note.LengthSixtyFourths;
+		return ListFromBlocks(block => {
+			List<MidiEvent> newEvents = block.ToMidiEvents(sixtyFourthsItr, rootKey, scale, samplesPerSixtyFourth);
+			sixtyFourthsItr += block.SixtyFourthsTotal();
 			return newEvents;
 		});
 	}
 
+	public override MusicBlock SplitNotes()
+	{
+		return new MusicBlockSimple(m_blocks.Select(block => block.SplitNotes()).ToArray());
+	}
 
-	private List<T> ListFromNotes<T>(Func<MusicNote, List<T>> noteFunc)
+	public override MusicBlock MergeNotes()
+	{
+		return new MusicBlockSimple(m_blocks.Select(block => block.MergeNotes()).ToArray());
+	}
+
+
+	private List<T> ListFromBlocks<T>(Func<MusicBlock, List<T>> blockFunc)
 	{
 		List<T> list = new List<T>();
-		foreach (MusicNote note in m_notes)
+		foreach (MusicBlock block in m_blocks)
 		{
-			list.AddRange(noteFunc(note));
+			list.AddRange(blockFunc(block));
 		}
 		return list;
 	}

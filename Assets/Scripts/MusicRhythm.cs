@@ -61,7 +61,7 @@ public class MusicRhythm
 	public void Display(MusicScale scale, string elementId)
 	{
 		int noteCount = m_lengthsSixtyFourths.Length;
-		uint[] times = Enumerable.Range(0, noteCount).Select(i => (uint)i).ToArray();
+		uint[] times = Enumerable.Range(0, noteCount).Select(i => i == 0 ? 0U : new ArraySegment<uint>(m_lengthsSixtyFourths, 0, i).Aggregate((a, b) => a + b)).ToArray();
 		uint[] keys = m_chordIndices.Select(index => MusicUtility.midiMiddleCKey + (uint)MusicUtility.TonesToSemitones(index, scale)).ToArray();
 
 		Assert.AreEqual(noteCount, times.Length);
