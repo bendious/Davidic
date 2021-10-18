@@ -57,6 +57,7 @@ mergeInto(LibraryManager.library, {
 						<sign>G</sign>\n\
 						<line>2</line>\n\
 					</clef>\n\
+					<divisions>16</divisions>/*TODO: base on time signature?*/\n\
 				</attributes>\n\
 				<direction placement="above">\n\
 					<direction-type>\n\
@@ -77,6 +78,20 @@ mergeInto(LibraryManager.library, {
 		/*const*/var semitones_per_octave = 12;
 		/*const*/var keys_per_octave = 7;
 		console.assert(semitones_from_c.length == keys_per_octave);
+		/*const*/var types_by_length = {
+			'1': ['64th', ''],
+			'2': ['32nd', ''],
+			'3': ['32nd', '<dot/>'],
+			'4': ['sixteenth', ''],
+			'6': ['sixteenth', '<dot/>'],
+			'8': ['eighth', ''],
+			'12': ['eighth', '<dot/>'],
+			'16': ['quarter', ''],
+			'24': ['quarter', '<dot/>'],
+			'32': ['half', ''],
+			'48': ['half', '<dot/>'],
+			'64': ['whole', ''],
+		};
 
 		// accumulators / inter-note memory
 		var time_val_prev = -1;
@@ -123,7 +138,10 @@ mergeInto(LibraryManager.library, {
 			}
 			var note_letter = String.fromCharCode(((note_val + 2) % keys_per_octave) + 'A'.charCodeAt(0)); // see https://stackoverflow.com/questions/36129721/convert-number-to-alphabet-letter
 			var note_octave = Math.floor(key_val / semitones_per_octave) - 1; // NOTE offset: middle-C (MIDI key 60) in MusicXML is the start of octave 4 rather than 5
-			var type_str = (length_val == 1 ? '64th' : length_val == 2 ? '32nd' : length_val == 4 ? '16th' : length_val == 8 ? 'eighth' : length_val == sixtyfourths_per_quarter ? 'quarter' : length_val == 32 ? 'half' : length_val == 64 ? 'whole' : 'ERROR');
+			var length_str = length_val.toString();
+			var type_and_dot_str = (length_str in types_by_length) ? types_by_length[length_str] : [ 'ERROR', '' ];
+			var type_str = type_and_dot_str[0];
+			var dot_str = type_and_dot_str[1];
 			beam_before = !new_measure && (is_chord ? beam_before : i > 0 && length_val <= 8 && inputArrayUint(lengths, i - 1) == length_val);
 			var j = i + 1;
 			for (; j < note_count && length_val <= 8 && inputArrayUint(times, j) == time_val; ++j) {}
@@ -139,12 +157,12 @@ mergeInto(LibraryManager.library, {
 					</' + pitch_tag + '>\n\
 					<duration>' + length_val + '</duration>\n\
 					<voice>' + (overlap_amount > 0 ? 2 : 1) + '</voice>\n\
-					<type>' + type_str + '</type>\n\
+					<type>' + type_str + '</type>' + dot_str + '\n\
 					<beam number="1">' + beam_str + '</beam>\n\
 					<accidental>' + (semitone_offset > 0 ? 'sharp' : semitone_offset < 0 ? 'flat' : '') + '</accidental>\n'
 					+ per_note_str + '\
 				</note>';
-			// TODO: <dot/>/<{p/mp/mf/f}/>?
+			// TODO: <{p/mp/mf/f}/>?
 
 			time_val_prev = time_val;
 			length_val_prev = length_val;

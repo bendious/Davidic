@@ -48,7 +48,27 @@ public class MusicBlockSimple : MusicBlock
 
 	public override MusicBlock MergeNotes()
 	{
-		return new MusicBlockSimple(m_blocks.Select(block => block.MergeNotes()).ToArray());
+		if (UnityEngine.Random.value < 0.5f/*TODO?*/)
+		{
+			return new MusicBlockSimple(m_blocks.Select(block => block.MergeNotes()).ToArray());
+		}
+
+		List<MusicBlock> manualBlocks = new List<MusicBlock>();
+		for (int i = 0, n = m_blocks.Length; i < n; ++i)
+		{
+			uint sixtyFourthsMerged = 0U;
+			int j, m;
+			for (j = i, m = UnityEngine.Random.Range(i + 1, Math.Min(i + 3, n)); j < m && sixtyFourthsMerged < MusicUtility.sixtyFourthsPerMeasure && m_blocks[i].SixtyFourthsTotal() == m_blocks[j].SixtyFourthsTotal(); ++j) // TODO: restrict merge counts to powers of two? allow merging different length notes/blocks?
+			{
+				sixtyFourthsMerged += m_blocks[j].SixtyFourthsTotal();
+			}
+			MusicNote noteMerged = new MusicNote(m_blocks[i].GetNotes(0U).First().m_note, new float[] { 0.0f }, false) {
+				LengthSixtyFourths = sixtyFourthsMerged,
+			}; // TODO: better way of merging blocks?
+			manualBlocks.Add(noteMerged);
+			i = j - 1;
+		}
+		return new MusicBlockSimple(manualBlocks.ToArray());
 	}
 
 

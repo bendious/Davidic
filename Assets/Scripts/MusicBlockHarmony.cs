@@ -14,7 +14,7 @@ public class MusicBlockHarmony : MusicBlock
 	{
 		Assert.IsTrue(harmoniesMax > 0U);
 		List<MusicNote> harmonyNotes = new List<MusicNote>();
-		List<NoteTimePair> melodyNotes = (UnityEngine.Random.value < 0.5f ? melody.MergeNotes().SplitNotes()/*TODO*/ : melody).GetNotes(0U);
+		List<NoteTimePair> melodyNotes = (UnityEngine.Random.value < 0.333f ? melody.MergeNotes() : (UnityEngine.Random.value < 0.5f ? melody.SplitNotes() : melody)).GetNotes(0U); // TODO: more strategic splitting/merging (both w/i same block)?
 		foreach (NoteTimePair noteTime in melodyNotes)
 		{
 			MusicNote note = noteTime.m_note;
