@@ -79,18 +79,18 @@ mergeInto(LibraryManager.library, {
 		/*const*/var keys_per_octave = 7;
 		console.assert(semitones_from_c.length == keys_per_octave);
 		/*const*/var types_by_length = {
-			'1': ['64th', ''],
-			'2': ['32nd', ''],
-			'3': ['32nd', '<dot/>'],
-			'4': ['sixteenth', ''],
-			'6': ['sixteenth', '<dot/>'],
-			'8': ['eighth', ''],
-			'12': ['eighth', '<dot/>'],
-			'16': ['quarter', ''],
-			'24': ['quarter', '<dot/>'],
-			'32': ['half', ''],
-			'48': ['half', '<dot/>'],
-			'64': ['whole', ''],
+			1: ['64th', ''],
+			2: ['32nd', ''],
+			3: ['32nd', '<dot/>'],
+			4: ['16th', ''],
+			6: ['16th', '<dot/>'],
+			8: ['eighth', ''],
+			12: ['eighth', '<dot/>'],
+			16: ['quarter', ''],
+			24: ['quarter', '<dot/>'],
+			32: ['half', ''],
+			48: ['half', '<dot/>'],
+			64: ['whole', ''],
 		};
 
 		// accumulators / inter-note memory
@@ -138,8 +138,7 @@ mergeInto(LibraryManager.library, {
 			}
 			var note_letter = String.fromCharCode(((note_val + 2) % keys_per_octave) + 'A'.charCodeAt(0)); // see https://stackoverflow.com/questions/36129721/convert-number-to-alphabet-letter
 			var note_octave = Math.floor(key_val / semitones_per_octave) - 1; // NOTE offset: middle-C (MIDI key 60) in MusicXML is the start of octave 4 rather than 5
-			var length_str = length_val.toString();
-			var type_and_dot_str = (length_str in types_by_length) ? types_by_length[length_str] : [ 'ERROR', '' ];
+			var type_and_dot_str = (length_val in types_by_length) ? types_by_length[length_val] : [ 'ERROR', '' ];
 			var type_str = type_and_dot_str[0];
 			var dot_str = type_and_dot_str[1];
 			beam_before = !new_measure && (is_chord ? beam_before : i > 0 && length_val <= 8 && inputArrayUint(lengths, i - 1) == length_val);
