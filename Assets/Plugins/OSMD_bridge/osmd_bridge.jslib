@@ -1,5 +1,5 @@
 mergeInto(LibraryManager.library, {
-	Update: function (element_id, title, instrument_names, instrument_count, key_fifths, key_mode, note_count, times, keys, lengths, bpm) {
+	UpdateInternal: function (element_id, title, instrument_names, instrument_count, key_fifths, key_mode, note_count, times, keys, lengths, bpm) {
 		const inputArrayUint = function (array, index) {
 			return HEAPU32[(array >> 2) + index]; // see https://docs.unity3d.com/Manual/webgl-interactingwithbrowserscripting.html
 		};

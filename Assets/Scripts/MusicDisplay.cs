@@ -31,15 +31,34 @@ public static class MusicDisplay
 #endif
 	}
 
-#if UNITY_EDITOR
-	public static void Update(string element_id, string title, string[] instrument_names, uint instrument_count, int key_fifths, string key_mode, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm)
+	public static void Update(string elementId, string title, string[] instrumentNames, MusicScale scale, uint[] times, uint[] keys, uint[] lengths, uint bpm)
 	{
-		Assert.AreEqual(instrument_names.Length, instrument_count);
-		Assert.AreEqual(note_count, times.Length);
-		Assert.AreEqual(note_count, keys.Length);
-		Assert.AreEqual(note_count, lengths.Length);
+		int noteCount = keys.Length;
+		Assert.AreEqual(times.Length, noteCount);
+		Assert.AreEqual(noteCount, lengths.Length);
 		Assert.IsFalse(lengths.Contains(0U));
 
+		string[] instrumentNamesSafe = (instrumentNames is null) ? new string[] { "" } : instrumentNames;
+		UpdateInternal(elementId, title, instrumentNamesSafe, (uint)instrumentNamesSafe.Length, scale.m_fifths, scale.m_mode, noteCount, times, keys, lengths, bpm);
+	}
+
+	public static void Finish()
+	{
+#if UNITY_EDITOR
+		StreamWriter outputFile = new StreamWriter(m_debugOutputFile, true);
+
+		// add HTML footer
+		outputFile.WriteLine("\t\t</script>");
+		outputFile.WriteLine("\t</body>");
+		outputFile.WriteLine("</html>");
+		outputFile.Close();
+#endif
+	}
+
+
+#if UNITY_EDITOR
+	private static void UpdateInternal(string element_id, string title, string[] instrument_names, uint instrument_count, int key_fifths, string key_mode, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm)
+	{
 		StreamWriter outputFile = new StreamWriter(m_debugOutputFile, true);
 
 		// add "params"
@@ -77,19 +96,6 @@ public static class MusicDisplay
 #else
 	// see Plugins/OSMD_bridge/osmd_bridge.jslib
 	[DllImport("__Internal")]
-	public static extern void Update(string element_id, string title, string[] instrument_names, uint instrument_count, int key_fifths, string key_mode, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm);
+	private static extern void UpdateInternal(string element_id, string title, string[] instrument_names, uint instrument_count, int key_fifths, string key_mode, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm);
 #endif
-
-	public static void Finish()
-	{
-#if UNITY_EDITOR
-		StreamWriter outputFile = new StreamWriter(m_debugOutputFile, true);
-
-		// add HTML footer
-		outputFile.WriteLine("\t\t</script>");
-		outputFile.WriteLine("\t</body>");
-		outputFile.WriteLine("</html>");
-		outputFile.Close();
-#endif
-	}
 }

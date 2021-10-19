@@ -32,6 +32,6 @@ public abstract class MusicBlock
 		Assert.AreEqual(timeSequence.Length, noteCount);
 		Assert.AreEqual(noteCount, lengthSequence.Length);
 
-		MusicDisplay.Update(elementId, "", instrumentNames, (uint)instrumentNames.Length, scale.m_fifths, scale.m_mode, noteCount, timeSequence, keySequence, lengthSequence, bpm);
+		MusicDisplay.Update(elementId, "", instrumentNames, scale, timeSequence, keySequence, lengthSequence, bpm);
 	}
 }

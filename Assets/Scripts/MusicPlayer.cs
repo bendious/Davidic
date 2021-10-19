@@ -84,15 +84,16 @@ public class MusicPlayer : MonoBehaviour
 		{
 			return;
 		}
-		List<uint> chosenInstrumentIndices = new List<uint>();
+		List<uint> instrumentList = new List<uint>();
 		for (uint i = 0U, n = uint.Parse(m_instrumentCountField.text); i < n; ++i)
 		{
-			chosenInstrumentIndices.Add((uint)candidateIndices[Random.Range(0, candidateIndices.Count)]);
+			instrumentList.Add((uint)candidateIndices[Random.Range(0, candidateIndices.Count)]);
 		}
-		string[] instrumentNames = chosenInstrumentIndices.Select(index => m_musicStreamSynthesizer.SoundBank.getInstrument((int)index, false/*?*/).Name).ToArray();
+		uint[] instrumentIndices = instrumentList.Distinct().ToArray();
+		string[] instrumentNames = instrumentIndices.Select(index => m_musicStreamSynthesizer.SoundBank.getInstrument((int)index, false/*?*/).Name).ToArray();
 
 		uint bpm = uint.Parse(m_tempoField.text);
-		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, m_musicSequencer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, chosenInstrumentIndices.ToArray(), bpm, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn, m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray(), uint.Parse(m_harmonyCountField.text));
+		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, m_musicSequencer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, instrumentIndices, bpm, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn, m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray(), uint.Parse(m_harmonyCountField.text));
 
 		// update display
 		MusicDisplay.Start();
