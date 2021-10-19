@@ -64,9 +64,6 @@ public class MusicRhythm
 		uint[] times = Enumerable.Range(0, noteCount).Select(i => i == 0 ? 0U : new ArraySegment<uint>(m_lengthsSixtyFourths, 0, i).Aggregate((a, b) => a + b)).ToArray();
 		uint[] keys = m_chordIndices.Select(index => MusicUtility.midiMiddleCKey + (uint)MusicUtility.TonesToSemitones(index, scale)).ToArray();
 
-		Assert.AreEqual(noteCount, times.Length);
-		Assert.AreEqual(noteCount, keys.Length);
-
 		MusicDisplay.Update(elementId, "Rhythm:", null, scale, times, keys, m_lengthsSixtyFourths, 0U); // NOTE that the bpm of 0 tells the update to use chord progression special formatting
 	}
 }

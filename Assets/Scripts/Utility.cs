@@ -17,10 +17,7 @@ public static class Utility
 		return (r < 0) ? r + m : r;
 	}
 
-	public static float Fract(float x)
-	{
-		return x - (float)Math.Truncate(x);
-	}
+	public static float Fract(float x) => x - (float)Math.Truncate(x);
 
 	public static T RandomWeighted<T>(T[] values, float[] weights)
 	{

@@ -120,8 +120,5 @@ public class MusicPlayer : MonoBehaviour
 		// NOTE that we don't increment m_musicSequencer since m_musicStreamSynthesizer takes care of that
 	}
 
-	private void OnAudioSetPosition(int new_position)
-	{
-		m_musicSequencer.SetTime(new System.TimeSpan(new_position));
-	}
+	private void OnAudioSetPosition(int new_position) => m_musicSequencer.SetTime(new System.TimeSpan(new_position));
 }

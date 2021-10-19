@@ -29,36 +29,22 @@ public class MusicBlockHarmony : MusicBlock
 		m_children = new MusicBlock[] { melody, new MusicBlockSimple(harmonyNotes.ToArray()) };
 	}
 
-	public override uint SixtyFourthsTotal()
-	{
-		return CombineFromChildren(block => block.SixtyFourthsTotal(), Math.Max, null);
-	}
+	public override uint SixtyFourthsTotal() => CombineFromChildren(block => block.SixtyFourthsTotal(), Math.Max, null);
 
-	public override List<NoteTimePair> GetNotes(uint timeOffset)
-	{
-		return CombineFromChildren(block => block.GetNotes(timeOffset), (a, b) => Enumerable.Concat(a, b).ToList(), list => list.Sort((a, b) => NoteSortCompare(a.m_time, b.m_time, a.m_note.LengthSixtyFourths, b.m_note.LengthSixtyFourths)));
-	}
+	public override List<NoteTimePair> GetNotes(uint timeOffset) => CombineFromChildren(block => block.GetNotes(timeOffset), (a, b) => Enumerable.Concat(a, b).ToList(), list => list.Sort((a, b) => NoteSortCompare(a.m_time, b.m_time, a.m_note.LengthSixtyFourths, b.m_note.LengthSixtyFourths)));
 
 	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth, uint channelIdx)
 	{
 		return CombineFromChildren(block => block.ToMidiEvents(startSixtyFourths, rootKey, scale, samplesPerSixtyFourth, channelIdx), (a, b) => Enumerable.Concat(a, b).ToList(), list => list.Sort((a, b) => a.deltaTime.CompareTo(b.deltaTime)));
 	}
 
-	public override MusicBlock SplitNotes()
-	{
-		return new MusicBlockHarmony(m_children.Select(block => block.SplitNotes()).ToArray());
-	}
 
-	public override MusicBlock MergeNotes()
-	{
-		return new MusicBlockHarmony(m_children.Select(block => block.MergeNotes()).ToArray());
-	}
+	public override MusicBlock SplitNotes() => new MusicBlockHarmony(m_children.Select(block => block.SplitNotes()).ToArray());
+
+	public override MusicBlock MergeNotes() => new MusicBlockHarmony(m_children.Select(block => block.MergeNotes()).ToArray());
 
 
-	private MusicBlockHarmony(MusicBlock[] children)
-	{
-		m_children = children;
-	}
+	private MusicBlockHarmony(MusicBlock[] children) => m_children = children;
 
 	private T CombineFromChildren<T>(Func<MusicBlock, T> blockFunc, Func<T, T, T> combineFunc, Action<T> finalFunc)
 	{

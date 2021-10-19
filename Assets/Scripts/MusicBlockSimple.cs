@@ -16,10 +16,7 @@ public class MusicBlockSimple : MusicBlock
 		m_blocks = blocks;
 	}
 
-	public override uint SixtyFourthsTotal()
-	{
-		return ListFromBlocks(block => new List<uint> { block.SixtyFourthsTotal() }).Aggregate((a, b) => a + b);
-	}
+	public override uint SixtyFourthsTotal() => ListFromBlocks(block => new List<uint> { block.SixtyFourthsTotal() }).Aggregate((a, b) => a + b);
 
 	public override List<NoteTimePair> GetNotes(uint timeOffset)
 	{
@@ -41,10 +38,7 @@ public class MusicBlockSimple : MusicBlock
 		});
 	}
 
-	public override MusicBlock SplitNotes()
-	{
-		return new MusicBlockSimple(m_blocks.Select(block => block.SplitNotes()).ToArray());
-	}
+	public override MusicBlock SplitNotes() => new MusicBlockSimple(m_blocks.Select(block => block.SplitNotes()).ToArray());
 
 	public override MusicBlock MergeNotes()
 	{

@@ -44,15 +44,9 @@ public class MusicNote : MusicBlock
 		m_chord = noteOrig.m_chord;
 	}
 
-	public override uint SixtyFourthsTotal()
-	{
-		return LengthSixtyFourths;
-	}
+	public override uint SixtyFourthsTotal() => LengthSixtyFourths;
 
-	public override List<NoteTimePair> GetNotes(uint timeOffset)
-	{
-		return new List<NoteTimePair> { new NoteTimePair { m_note = this, m_time = timeOffset } };
-	}
+	public override List<NoteTimePair> GetNotes(uint timeOffset) => new List<NoteTimePair> { new NoteTimePair { m_note = this, m_time = timeOffset } };
 
 	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth, uint channelIdx)
 	{
@@ -108,10 +102,7 @@ public class MusicNote : MusicBlock
 		return new MusicBlockSimple(splitNotes.ToArray());
 	}
 
-	public override MusicBlock MergeNotes()
-	{
-		return this;
-	}
+	public override MusicBlock MergeNotes() => this;
 
 	public bool ContainsRoot()
 	{
@@ -125,19 +116,16 @@ public class MusicNote : MusicBlock
 		return false;
 	}
 
-	public List<uint> MidiKeys(uint rootKey, MusicScale scale)
-	{
-		return m_chordIndices.ToList().ConvertAll(index => ChordIndexToMidiKey(index, rootKey, scale));
-	}
+	public List<uint> MidiKeys(uint rootKey, MusicScale scale) => m_chordIndices.ToList().ConvertAll(index => ChordIndexToMidiKey(index, rootKey, scale));
 
 	public uint KeyCount
 	{
-		get { return (uint)m_chordIndices.Length; }
+		get => (uint)m_chordIndices.Length;
 	}
 
 	public uint ChordCount
 	{
-		get { return (uint)m_chord.Length; }
+		get => (uint)m_chord.Length;
 	}
 
 	public uint LengthSixtyFourths { get; set; }

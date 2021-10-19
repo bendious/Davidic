@@ -19,10 +19,7 @@ public class MusicBlockRepeat : MusicBlock
 		m_schedule = schedule;
 	}
 
-	public override uint SixtyFourthsTotal()
-	{
-		return CombineViaSchedule(block => new List<uint> { block.SixtyFourthsTotal() }).Aggregate((a, b) => a + b);
-	}
+	public override uint SixtyFourthsTotal() => CombineViaSchedule(block => new List<uint> { block.SixtyFourthsTotal() }).Aggregate((a, b) => a + b);
 
 	public override List<NoteTimePair> GetNotes(uint timeOffset)
 	{
@@ -44,15 +41,9 @@ public class MusicBlockRepeat : MusicBlock
 		});
 	}
 
-	public override MusicBlock SplitNotes()
-	{
-		return new MusicBlockRepeat(m_children.Select(block => block.SplitNotes()).ToArray(), m_schedule);
-	}
+	public override MusicBlock SplitNotes() => new MusicBlockRepeat(m_children.Select(block => block.SplitNotes()).ToArray(), m_schedule);
 
-	public override MusicBlock MergeNotes()
-	{
-		return new MusicBlockRepeat(m_children.Select(block => block.MergeNotes()).ToArray(), m_schedule);
-	}
+	public override MusicBlock MergeNotes() => new MusicBlockRepeat(m_children.Select(block => block.MergeNotes()).ToArray(), m_schedule);
 
 
 	private List<T> CombineViaSchedule<T>(Func<MusicBlock, List<T>> blockFunc)

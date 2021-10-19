@@ -97,7 +97,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 	public override bool isPlaying
 	{
-		get { return true; }
+		get => true;
 	}
 
 	public override CSharpSynth.Sequencer.MidiSequencerEvent Process(int frame)
@@ -138,7 +138,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 	public uint LengthSamples
 	{
-		get { return m_musicBlock.SixtyFourthsTotal() * m_samplesPerSixtyFourth; }
+		get => m_musicBlock.SixtyFourthsTotal() * m_samplesPerSixtyFourth;
 	}
 
 	public void Display(string elementIdChords, string elementIdMain, string[] instrumentNames, uint bpm)

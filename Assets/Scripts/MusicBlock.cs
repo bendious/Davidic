@@ -28,10 +28,6 @@ public abstract class MusicBlock
 		uint[] keySequence = noteTimeSequence.SelectMany(pair => pair.m_note.MidiKeys(rootKey, scale)).ToArray();
 		uint[] lengthSequence = noteTimeSequence.SelectMany(pair => Enumerable.Repeat(pair.m_note.LengthSixtyFourths, (int)pair.m_note.KeyCount)).ToArray();
 
-		int noteCount = keySequence.Length;
-		Assert.AreEqual(timeSequence.Length, noteCount);
-		Assert.AreEqual(noteCount, lengthSequence.Length);
-
 		MusicDisplay.Update(elementId, "", instrumentNames, scale, timeSequence, keySequence, lengthSequence, bpm);
 	}
 }
