@@ -21,7 +21,7 @@ public abstract class MusicBlock
 	public abstract MusicBlock SplitNotes();
 	public abstract MusicBlock MergeNotes();
 
-	public void Display(uint rootKey, MusicScale scale, string element_id, uint bpm)
+	public void Display(uint rootKey, MusicScale scale, string elementId, string instrumentName, uint bpm)
 	{
 		List<NoteTimePair> noteTimeSequence = GetNotes(0U);
 		uint[] timeSequence = noteTimeSequence.SelectMany(pair => Enumerable.Repeat(pair.m_time, (int)pair.m_note.KeyCount)).ToArray();
@@ -32,6 +32,6 @@ public abstract class MusicBlock
 		Assert.AreEqual(timeSequence.Length, noteCount);
 		Assert.AreEqual(noteCount, lengthSequence.Length);
 
-		MusicDisplay.Update(element_id, "", scale.m_fifths, scale.m_mode, noteCount, timeSequence, keySequence, lengthSequence, bpm);
+		MusicDisplay.Update(elementId, "", instrumentName, scale.m_fifths, scale.m_mode, noteCount, timeSequence, keySequence, lengthSequence, bpm);
 	}
 }

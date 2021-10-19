@@ -133,10 +133,10 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		get { return m_musicBlock.SixtyFourthsTotal() * m_samplesPerSixtyFourth; }
 	}
 
-	public void Display(string elementIdChords, string elementIdMain, uint bpm)
+	public void Display(string elementIdChords, string elementIdMain, string instrumentName, uint bpm)
 	{
 		m_chordProgression.Display(m_scale, elementIdChords);
 		m_rhythm.Display(m_scale, "osmd-rhythm");
-		m_musicBlock.Display(m_rootKey, m_scale, elementIdMain, bpm);
+		m_musicBlock.Display(m_rootKey, m_scale, elementIdMain, instrumentName, bpm);
 	}
 }

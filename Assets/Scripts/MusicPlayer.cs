@@ -17,7 +17,6 @@ public class MusicPlayer : MonoBehaviour
 	public Dropdown m_rootNoteDropdown;
 	public Dropdown m_scaleDropdown;
 	public ScrollRect m_instrumentScrollview;
-	public Text m_instrumentText;
 	public Toggle m_chordRegenToggle;
 	public Toggle m_rhythmRegenToggle;
 	public InputField[] m_noteLengthFields;
@@ -85,14 +84,14 @@ public class MusicPlayer : MonoBehaviour
 			return;
 		}
 		int chosenInstrumentIdx = candidateIndices[Random.Range(0, candidateIndices.Count)];
-		m_instrumentText.text = "Current:\n" + m_musicStreamSynthesizer.SoundBank.getInstrument(chosenInstrumentIdx, false/*?*/).Name;
+		string instrumentName = m_musicStreamSynthesizer.SoundBank.getInstrument(chosenInstrumentIdx, false/*?*/).Name;
 
 		uint bpm = uint.Parse(m_tempoField.text);
 		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, m_musicSequencer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)chosenInstrumentIdx, bpm, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn, m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray(), uint.Parse(m_harmonyCountField.text));
 
 		// update display
 		MusicDisplay.Start();
-		m_musicSequencer.Display("osmd-chords", "osmd-main", bpm);
+		m_musicSequencer.Display("osmd-chords", "osmd-main", instrumentName, bpm);
 		MusicDisplay.Finish();
 	}
 
@@ -104,7 +103,7 @@ public class MusicPlayer : MonoBehaviour
 		}
 		AudioSource audio_source = GetComponent<AudioSource>();
 		audio_source.volume = float.Parse(m_volumeField.text);
-		audio_source.clip = AudioClip.Create("Generated Clip", (int)m_musicSequencer.LengthSamples, (m_stereo ? 2 : 1), (int)m_samplesPerSecond, false, OnAudioRead, OnAudioSetPosition);
+		audio_source.clip = AudioClip.Create("Generated Clip", (int)m_musicSequencer.LengthSamples, m_stereo ? 2 : 1, (int)m_samplesPerSecond, false, OnAudioRead, OnAudioSetPosition);
 		audio_source.Play();
 	}
 

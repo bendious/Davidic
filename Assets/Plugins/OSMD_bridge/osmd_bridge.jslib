@@ -1,34 +1,36 @@
 mergeInto(LibraryManager.library, {
-	Update: function (element_id, title, key_fifths, key_mode, note_count, times, keys, lengths, bpm) {
+	Update: function (element_id, title, instrument_name, key_fifths, key_mode, note_count, times, keys, lengths, bpm) {
 		const inputArrayUint = function (array, index) {
 			return HEAPU32[(array >> 2) + index]; // see https://docs.unity3d.com/Manual/webgl-interactingwithbrowserscripting.html
 		};
 
 		// create OSMD instance if necessary
 		var id_str = Pointer_stringify(element_id);
+		var is_untimed = (bpm == 0);
 		if (document.osmds == null) {
 			document.osmds = {};
 		}
 		if (!(id_str in document.osmds)) {
-			document.osmds[id_str] = new opensheetmusicdisplay.OpenSheetMusicDisplay(id_str, { drawingParameters: "compacttight" });
+			document.osmds[id_str] = new opensheetmusicdisplay.OpenSheetMusicDisplay(id_str, { drawingParameters: is_untimed ? "compacttight" : "compact" });
 		}
 
 		// MusicXML header
 		// TODO: use timewise rather than partwise?
-		var is_untimed = (bpm == 0);
+		var instrument_name_str = Pointer_stringify(instrument_name);
 		var xml_str = '<?xml version="1.0" encoding="UTF-8"?>\n\
 			<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 2.0 Partwise//EN"\n\
 				"http://www.musicxml.org/dtds/partwise.dtd">\n\
 			<score-partwise version="2.0">\n\
 				<part-list>\n\
-					<score-part id="P1">\n\
-						<midi-instrument id="P1I1">\n\
+					<score-part id="' + instrument_name_str + '">\n\
+						<part-name>' + instrument_name_str + '</part-name>\n\
+						<midi-instrument id="' + instrument_name_str + 'I1">\n\
 							<midi-channel>0</midi-channel>\n\
 							<midi-program>0</midi-program>\n\
 						</midi-instrument>\n\
 					</score-part>\n\
 				</part-list>\n\
-				<part id="P1">' + (is_untimed ? '\n\
+				<part id="' + instrument_name_str + '">' + (is_untimed ? '\n\
 			<measure>\n\
 				<attributes>\n\
 					<key print-object="no"></key>\n\
