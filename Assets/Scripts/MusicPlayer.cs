@@ -21,6 +21,7 @@ public class MusicPlayer : MonoBehaviour
 	public Toggle m_rhythmRegenToggle;
 	public InputField[] m_noteLengthFields;
 	public InputField m_harmonyCountField;
+	public InputField m_instrumentCountField;
 	public InputField m_volumeField;
 
 	private StreamSynthesizer m_musicStreamSynthesizer;
@@ -83,15 +84,19 @@ public class MusicPlayer : MonoBehaviour
 		{
 			return;
 		}
-		int chosenInstrumentIdx = candidateIndices[Random.Range(0, candidateIndices.Count)];
-		string instrumentName = m_musicStreamSynthesizer.SoundBank.getInstrument(chosenInstrumentIdx, false/*?*/).Name;
+		List<uint> chosenInstrumentIndices = new List<uint>();
+		for (uint i = 0U, n = uint.Parse(m_instrumentCountField.text); i < n; ++i)
+		{
+			chosenInstrumentIndices.Add((uint)candidateIndices[Random.Range(0, candidateIndices.Count)]);
+		}
+		string[] instrumentNames = chosenInstrumentIndices.Select(index => m_musicStreamSynthesizer.SoundBank.getInstrument((int)index, false/*?*/).Name).ToArray();
 
 		uint bpm = uint.Parse(m_tempoField.text);
-		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, m_musicSequencer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, (uint)chosenInstrumentIdx, bpm, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn, m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray(), uint.Parse(m_harmonyCountField.text));
+		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, m_musicSequencer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, chosenInstrumentIndices.ToArray(), bpm, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn, m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray(), uint.Parse(m_harmonyCountField.text));
 
 		// update display
 		MusicDisplay.Start();
-		m_musicSequencer.Display("osmd-chords", "osmd-main", instrumentName, bpm);
+		m_musicSequencer.Display("osmd-chords", "osmd-main", instrumentNames, bpm);
 		MusicDisplay.Finish();
 	}
 

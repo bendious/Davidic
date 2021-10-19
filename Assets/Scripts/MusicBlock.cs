@@ -16,12 +16,12 @@ public abstract class MusicBlock
 
 	public abstract List<NoteTimePair> GetNotes(uint timeOffset);
 
-	public abstract List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth);
+	public abstract List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth, uint channelIdx);
 
 	public abstract MusicBlock SplitNotes();
 	public abstract MusicBlock MergeNotes();
 
-	public void Display(uint rootKey, MusicScale scale, string elementId, string instrumentName, uint bpm)
+	public void Display(uint rootKey, MusicScale scale, string elementId, string[] instrumentNames, uint bpm)
 	{
 		List<NoteTimePair> noteTimeSequence = GetNotes(0U);
 		uint[] timeSequence = noteTimeSequence.SelectMany(pair => Enumerable.Repeat(pair.m_time, (int)pair.m_note.KeyCount)).ToArray();
@@ -32,6 +32,6 @@ public abstract class MusicBlock
 		Assert.AreEqual(timeSequence.Length, noteCount);
 		Assert.AreEqual(noteCount, lengthSequence.Length);
 
-		MusicDisplay.Update(elementId, "", instrumentName, scale.m_fifths, scale.m_mode, noteCount, timeSequence, keySequence, lengthSequence, bpm);
+		MusicDisplay.Update(elementId, "", instrumentNames, (uint)instrumentNames.Length, scale.m_fifths, scale.m_mode, noteCount, timeSequence, keySequence, lengthSequence, bpm);
 	}
 }

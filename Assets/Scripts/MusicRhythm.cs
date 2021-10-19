@@ -67,6 +67,6 @@ public class MusicRhythm
 		Assert.AreEqual(noteCount, times.Length);
 		Assert.AreEqual(noteCount, keys.Length);
 
-		MusicDisplay.Update(elementId, "Rhythm:", "", scale.m_fifths, scale.m_mode, noteCount, times, keys, m_lengthsSixtyFourths, 0U); // NOTE that the bpm of 0 tells the update to use chord progression special formatting
+		MusicDisplay.Update(elementId, "Rhythm:", new string[] { "" }, 1U, scale.m_fifths, scale.m_mode, noteCount, times, keys, m_lengthsSixtyFourths, 0U); // NOTE that the bpm of 0 tells the update to use chord progression special formatting
 	}
 }

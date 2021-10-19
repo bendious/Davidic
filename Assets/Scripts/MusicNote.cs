@@ -54,7 +54,7 @@ public class MusicNote : MusicBlock
 		return new List<NoteTimePair> { new NoteTimePair { m_note = this, m_time = timeOffset } };
 	}
 
-	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth)
+	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth, uint channelIdx)
 	{
 		List<MidiEvent> events = new List<MidiEvent>();
 
@@ -69,7 +69,7 @@ public class MusicNote : MusicBlock
 				midiChannelEvent = MidiHelper.MidiChannelEvent.Note_On,
 				parameter1 = (byte)keyCur,
 				parameter2 = (byte)(VolumePct * 100), // velocity
-				channel = 0,
+				channel = (byte)channelIdx,
 			};
 			events.Add(eventOn);
 		}
@@ -82,7 +82,7 @@ public class MusicNote : MusicBlock
 				deltaTime = endSample,
 				midiChannelEvent = MidiHelper.MidiChannelEvent.Note_Off,
 				parameter1 = (byte)ChordIndexToMidiKey(index, rootKey, scale),
-				channel = 0,
+				channel = (byte)channelIdx,
 			};
 			events.Add(eventOff);
 		}

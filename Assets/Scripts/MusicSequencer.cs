@@ -37,7 +37,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 
 	//--Public Methods
-	public MusicSequencer(StreamSynthesizer synth, MusicSequencer prevInstance, bool isScale, uint rootKeyIndex, uint scaleIndex, uint instrumentIndex, uint bpm, bool regenChords, bool regenRhythm, float[] noteLengthWeights, uint harmoniesMax)
+	public MusicSequencer(StreamSynthesizer synth, MusicSequencer prevInstance, bool isScale, uint rootKeyIndex, uint scaleIndex, uint[] instrumentIndices, uint bpm, bool regenChords, bool regenRhythm, float[] noteLengthWeights, uint harmoniesMax)
 		: base(synth)
 	{
 		// initialize
@@ -51,15 +51,19 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		m_chordProgression = isScale ? new ChordProgression(new float[][] { MusicUtility.chordI, MusicUtility.chordII, MusicUtility.chordIII, MusicUtility.chordIV, MusicUtility.chordV, MusicUtility.chordVI, MusicUtility.chordVII, MusicUtility.chordI.Select(index => index + MusicUtility.tonesPerOctave).ToArray() }) : (prevInstance == null || regenChords ? MusicUtility.chordProgressions[UnityEngine.Random.Range(0, MusicUtility.chordProgressions.Length)] : prevInstance.m_chordProgression);
 		m_rhythm = isScale ? new MusicRhythm(new uint[] { MusicUtility.sixtyFourthsPerBeat / 2U }, new float[] { 0.0f }) : (prevInstance == null || regenRhythm ? MusicRhythm.Random(m_chordProgression, noteLengthWeights) : prevInstance.m_rhythm);
 
-		// switch to the requested instrument
-		MidiEvent eventSetInstrument = new MidiEvent
+		// switch to the requested instruments
+		byte channelIdx = 0;
+		foreach (uint instrumentIndex in instrumentIndices)
 		{
-			deltaTime = 0,
-			midiChannelEvent = MidiHelper.MidiChannelEvent.Program_Change,
-			parameter1 = (byte)instrumentIndex,
-			channel = 0, // TODO
-		};
-		m_events.Add(eventSetInstrument);
+			MidiEvent eventSetInstrument = new MidiEvent
+			{
+				deltaTime = 0,
+				midiChannelEvent = MidiHelper.MidiChannelEvent.Program_Change,
+				parameter1 = (byte)instrumentIndex,
+				channel = channelIdx++,
+			};
+			m_events.Add(eventSetInstrument);
+		}
 
 		// sequence into notes
 		List<MusicNote> notes = m_rhythm.Sequence(m_chordProgression);
@@ -84,7 +88,11 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		{
 			m_musicBlock = new MusicBlockHarmony(m_musicBlock, harmoniesMax);
 		}
-		m_events.AddRange(m_musicBlock.ToMidiEvents(0U, m_rootKey, m_scale, m_samplesPerSixtyFourth));
+		for (uint channelItr = 0U, n = (uint)instrumentIndices.Length; channelItr < n; ++channelItr)
+		{
+			m_events.AddRange(m_musicBlock.ToMidiEvents(0U, m_rootKey, m_scale, m_samplesPerSixtyFourth, channelItr)); // TODO: separate parts per instrument
+		}
+		m_events.Sort((e1, e2) => e1.deltaTime.CompareTo(e2.deltaTime));
 	}
 
 	public override bool isPlaying
@@ -133,10 +141,10 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		get { return m_musicBlock.SixtyFourthsTotal() * m_samplesPerSixtyFourth; }
 	}
 
-	public void Display(string elementIdChords, string elementIdMain, string instrumentName, uint bpm)
+	public void Display(string elementIdChords, string elementIdMain, string[] instrumentNames, uint bpm)
 	{
 		m_chordProgression.Display(m_scale, elementIdChords);
 		m_rhythm.Display(m_scale, "osmd-rhythm");
-		m_musicBlock.Display(m_rootKey, m_scale, elementIdMain, instrumentName, bpm);
+		m_musicBlock.Display(m_rootKey, m_scale, elementIdMain, instrumentNames, bpm);
 	}
 }
