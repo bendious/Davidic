@@ -71,14 +71,14 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		if (!isScale)
 		{
 			// ensure ending on a long root note // TODO: better outro logic?
-			uint outroLength = MusicUtility.sixtyFourthsPerMeasure / (uint)UnityEngine.Random.Range(1, 3);
+			uint outroLengthMin = MusicUtility.sixtyFourthsPerMeasure / (uint)UnityEngine.Random.Range(1, 3);
 			if (notes.Last().ContainsRoot()) // TODO: include harmonies in check but also add harmonies if adding an additional note?
 			{
-				notes.Last().LengthSixtyFourths = outroLength;
+				notes.Last().LengthSixtyFourths = Math.Max(outroLengthMin, notes.Last().LengthSixtyFourths);
 			}
 			else
 			{
-				notes.Add(new MusicNote(new float[] { 0.0f }, outroLength, UnityEngine.Random.Range(0.5f, 1.0f), MusicUtility.chordI7, 0U)); // TODO: coherent volume?
+				notes.Add(new MusicNote(new float[] { 0.0f }, outroLengthMin, UnityEngine.Random.Range(0.5f, 1.0f), MusicUtility.chordI7, 0U)); // TODO: coherent volume?
 			}
 		}
 
