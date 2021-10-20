@@ -17,6 +17,6 @@ public class ChordProgression
 		uint[] keys = m_progression.SelectMany(chord => chord.Select(note => MusicUtility.midiMiddleCKey + (uint)MusicUtility.TonesToSemitones(note, scale))).ToArray();
 
 		int noteCount = keys.Length;
-		MusicDisplay.Update(elementId, "Chord\\nProgression:", null, scale, times, keys, Enumerable.Repeat(timeInc, noteCount).ToArray(), 0U); // NOTE that the bpm of 0 tells the update to use chord progression special formatting
+		MusicDisplay.Update(elementId, "Chord\\nProgression:", null, scale, times, keys, Enumerable.Repeat(timeInc, noteCount).ToArray(), Enumerable.Repeat(0U, noteCount).ToArray(), 0U); // NOTE that the bpm of 0 tells the update to use chord progression special formatting
 	}
 }

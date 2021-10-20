@@ -28,11 +28,13 @@ public class MusicBlockSimple : MusicBlock
 		});
 	}
 
-	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth, uint channelIdx)
+	public override List<uint> GetChannels() => ListFromBlocks(block => block.GetChannels()).Distinct().ToList();
+
+	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth)
 	{
 		uint sixtyFourthsItr = startSixtyFourths;
 		return ListFromBlocks(block => {
-			List<MidiEvent> newEvents = block.ToMidiEvents(sixtyFourthsItr, rootKey, scale, samplesPerSixtyFourth, channelIdx);
+			List<MidiEvent> newEvents = block.ToMidiEvents(sixtyFourthsItr, rootKey, scale, samplesPerSixtyFourth);
 			sixtyFourthsItr += block.SixtyFourthsTotal();
 			return newEvents;
 		});
@@ -56,7 +58,7 @@ public class MusicBlockSimple : MusicBlock
 			{
 				sixtyFourthsMerged += m_blocks[j].SixtyFourthsTotal();
 			}
-			MusicNote noteMerged = new MusicNote(m_blocks[i].GetNotes(0U).First().m_note, new float[] { 0.0f }, false) {
+			MusicNote noteMerged = new MusicNote(m_blocks[i].GetNotes(0U).First().m_note, new float[] { 0.0f }, false, uint.MaxValue) {
 				LengthSixtyFourths = sixtyFourthsMerged,
 			}; // TODO: better way of merging blocks?
 			manualBlocks.Add(noteMerged);

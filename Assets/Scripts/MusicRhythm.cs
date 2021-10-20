@@ -44,7 +44,7 @@ public class MusicRhythm
 		Assert.AreEqual(lengthsSixtyFourths.Length, chordIndices.Length);
 	}
 
-	public List<MusicNote> Sequence(ChordProgression progression)
+	public List<MusicNote> Sequence(ChordProgression progression, uint channel)
 	{
 		// TODO: more sophisticated compositions of rhythm & chords
 		List<MusicNote> notes = new List<MusicNote>();
@@ -52,7 +52,7 @@ public class MusicRhythm
 		{
 			for (int i = 0, n = m_chordIndices.Length; i < n; ++i)
 			{
-				notes.Add(new MusicNote(new float[] { m_chordIndices[i] }, m_lengthsSixtyFourths[i], UnityEngine.Random.Range(0.5f, 1.0f), chord)); // TODO: coherent volume? pass whole progression and an index to each note?
+				notes.Add(new MusicNote(new float[] { m_chordIndices[i] }, m_lengthsSixtyFourths[i], UnityEngine.Random.Range(0.5f, 1.0f), chord, channel)); // TODO: coherent volume? pass whole progression and an index to each note?
 			}
 		}
 		return notes;
@@ -64,6 +64,6 @@ public class MusicRhythm
 		uint[] times = Enumerable.Range(0, noteCount).Select(i => i == 0 ? 0U : new ArraySegment<uint>(m_lengthsSixtyFourths, 0, i).Aggregate((a, b) => a + b)).ToArray();
 		uint[] keys = m_chordIndices.Select(index => MusicUtility.midiMiddleCKey + (uint)MusicUtility.TonesToSemitones(index, scale)).ToArray();
 
-		MusicDisplay.Update(elementId, "Rhythm:", null, scale, times, keys, m_lengthsSixtyFourths, 0U); // NOTE that the bpm of 0 tells the update to use chord progression special formatting
+		MusicDisplay.Update(elementId, "Rhythm:", null, scale, times, keys, m_lengthsSixtyFourths, Enumerable.Repeat(0U, noteCount).ToArray(), 0U); // NOTE that the bpm of 0 tells the update to use chord progression special formatting
 	}
 }

@@ -1,5 +1,5 @@
 mergeInto(LibraryManager.library, {
-	UpdateInternal: function (element_id, title, instrument_names, instrument_count, key_fifths, key_mode, note_count, times, keys, lengths, bpm) {
+	UpdateInternal: function (element_id, title, instrument_names, instrument_count, key_fifths, key_mode, note_count, times, keys, lengths, note_channels, bpm) {
 		const inputArrayUint = function (array, index) {
 			return HEAPU32[(array >> 2) + index]; // see https://docs.unity3d.com/Manual/webgl-interactingwithbrowserscripting.html
 		};
@@ -42,13 +42,13 @@ mergeInto(LibraryManager.library, {
 				"http://www.musicxml.org/dtds/partwise.dtd">\n\
 			<score-partwise version="2.0">\n\
 				<part-list>';
-		for (var idx = 0; idx < instrument_count; ++idx) {
-			var instrument_name_str = Pointer_stringify(inputArrayUint(instrument_names, idx)); // TODO: don't assume string pointers are uints?
+		for (var channel_idx = 0; channel_idx < instrument_count; ++channel_idx) {
+			var instrument_name_str = Pointer_stringify(inputArrayUint(instrument_names, channel_idx)); // TODO: don't assume string pointers are uints?
 			xml_str += '\n\
 					<score-part id="' + instrument_name_str + '">\n\
 						<part-name>' + instrument_name_str + '</part-name>\n\
 						<midi-instrument id="' + instrument_name_str + 'I1">\n\
-							<midi-channel>' + idx + '</midi-channel>\n\
+							<midi-channel>' + channel_idx + '</midi-channel>\n\
 							<midi-program>0</midi-program>\n\
 						</midi-instrument>\n\
 					</score-part>';
@@ -56,8 +56,8 @@ mergeInto(LibraryManager.library, {
 		xml_str += '\n\
 			</part-list>';
 
-		for (var idx = 0; idx < instrument_count; ++idx) {
-			var instrument_name_str = Pointer_stringify(inputArrayUint(instrument_names, idx)); // TODO: don't assume string pointers are uints?
+		for (var channel_idx = 0; channel_idx < instrument_count; ++channel_idx) {
+			var instrument_name_str = Pointer_stringify(inputArrayUint(instrument_names, channel_idx)); // TODO: don't assume string pointers are uints?
 			xml_str += '\n\
 				<part id="' + instrument_name_str + '">' + (is_untimed ? '\n\
 				<measure>\n\
@@ -112,10 +112,15 @@ mergeInto(LibraryManager.library, {
 
 			// per-note
 			for (var i = 0; i < note_count; ++i) {
+				var channel_val = inputArrayUint(note_channels, i);
+				if (channel_val != channel_idx) {
+					continue;
+				}
+
 				var time_val = inputArrayUint(times, i);
 				var key_val = inputArrayUint(keys, i);
 				var length_val = inputArrayUint(lengths, i);
-				console.log("time " + time_val + ", key " + key_val + ", length " + length_val); // TEMP?
+				console.log("time " + time_val + ", key " + key_val + ", length " + length_val + ", channel " + channel_val); // TEMP?
 				var is_chord = (time_val == time_val_prev && length_val == length_val_prev);
 
 				// overlap w/ previous note(s) if necessary
@@ -151,10 +156,10 @@ mergeInto(LibraryManager.library, {
 				var type_and_dot_str = (length_val in types_by_length) ? types_by_length[length_val] : [ 'ERROR', '' ];
 				var type_str = type_and_dot_str[0];
 				var dot_str = type_and_dot_str[1];
-				beam_before = !new_measure && (is_chord ? beam_before : i > 0 && length_val <= 8 && inputArrayUint(lengths, i - 1) == length_val);
+				beam_before = !new_measure && (is_chord ? beam_before : i > 0 && length_val <= 8 && length_val_prev == length_val);
 				var j = i + 1;
-				for (; j < note_count && length_val <= 8 && inputArrayUint(times, j) == time_val; ++j) {}
-				var beam_after = (j < note_count && length_val <= 8 && inputArrayUint(lengths, j) == length_val); // TODO: detect measure end?
+				for (; j < note_count && length_val <= 8 && (inputArrayUint(times, j) == time_val || inputArrayUint(note_channels, j) != channel_val); ++j) {} // TODO: better channel filtering?
+				var beam_after = (j < note_count && length_val <= 8 && inputArrayUint(lengths, j) == length_val && inputArrayUint(note_channels, j) == channel_val); // TODO: detect measure end?
 				var beam_str = (beam_before && beam_after) ? 'continue' : (beam_before ? 'end' : (beam_after ? 'begin' : ''));
 				xml_str += '\n\
 					<note>\n\

@@ -31,15 +31,16 @@ public static class MusicDisplay
 #endif
 	}
 
-	public static void Update(string elementId, string title, string[] instrumentNames, MusicScale scale, uint[] times, uint[] keys, uint[] lengths, uint bpm)
+	public static void Update(string elementId, string title, string[] instrumentNames, MusicScale scale, uint[] times, uint[] keys, uint[] lengths, uint[] noteChannels, uint bpm)
 	{
 		int noteCount = keys.Length;
 		Assert.AreEqual(times.Length, noteCount);
 		Assert.AreEqual(noteCount, lengths.Length);
+		Assert.AreEqual(noteCount, noteChannels.Length);
 		Assert.IsFalse(lengths.Contains(0U));
 
 		string[] instrumentNamesSafe = (instrumentNames is null) ? new string[] { "" } : instrumentNames;
-		UpdateInternal(elementId, title, instrumentNamesSafe, (uint)instrumentNamesSafe.Length, scale.m_fifths, scale.m_mode, noteCount, times, keys, lengths, bpm);
+		UpdateInternal(elementId, title, instrumentNamesSafe, (uint)instrumentNamesSafe.Length, scale.m_fifths, scale.m_mode, noteCount, times, keys, lengths, noteChannels, bpm);
 	}
 
 	public static void Finish()
@@ -57,7 +58,7 @@ public static class MusicDisplay
 
 
 #if UNITY_EDITOR
-	private static void UpdateInternal(string element_id, string title, string[] instrument_names, uint instrument_count, int key_fifths, string key_mode, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm)
+	private static void UpdateInternal(string element_id, string title, string[] instrument_names, uint instrument_count, int key_fifths, string key_mode, int note_count, uint[] times, uint[] keys, uint[] lengths, uint[] note_channels, uint bpm)
 	{
 		StreamWriter outputFile = new StreamWriter(m_debugOutputFile, true);
 
@@ -72,6 +73,7 @@ public static class MusicDisplay
 		outputFile.WriteLine("\t\tvar times = [" + string.Join(", ", times) + "];");
 		outputFile.WriteLine("\t\tvar keys = [" + string.Join(", ", keys) + "];");
 		outputFile.WriteLine("\t\tvar lengths = [" + string.Join(", ", lengths) + "];");
+		outputFile.WriteLine("\t\tvar note_channels = [" + string.Join(", ", note_channels) + "];");
 		outputFile.WriteLine("\t\tvar bpm = " + bpm + ";");
 
 		// copy bridge code
@@ -96,6 +98,6 @@ public static class MusicDisplay
 #else
 	// see Plugins/OSMD_bridge/osmd_bridge.jslib
 	[DllImport("__Internal")]
-	private static extern void UpdateInternal(string element_id, string title, string[] instrument_names, uint instrument_count, int key_fifths, string key_mode, int note_count, uint[] times, uint[] keys, uint[] lengths, uint bpm);
+	private static extern void UpdateInternal(string element_id, string title, string[] instrument_names, uint instrument_count, int key_fifths, string key_mode, int note_count, uint[] times, uint[] keys, uint[] lengths, uint[] note_channels, uint bpm);
 #endif
 }

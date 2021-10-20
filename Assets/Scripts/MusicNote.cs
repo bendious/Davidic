@@ -10,9 +10,10 @@ public class MusicNote : MusicBlock
 {
 	private readonly float[] m_chordIndices;
 	private readonly float[] m_chord;
+	public readonly uint m_channel;
 
 
-	public MusicNote(float[] chordIndices, uint lengthSixtyFourths, float volumePct, float[] chord)
+	public MusicNote(float[] chordIndices, uint lengthSixtyFourths, float volumePct, float[] chord, uint channel)
 	{
 		// TODO: check for / remove chord/index duplicates?
 		Assert.AreNotEqual(chordIndices.Length, 0);
@@ -21,9 +22,10 @@ public class MusicNote : MusicBlock
 		LengthSixtyFourths = lengthSixtyFourths;
 		VolumePct = volumePct;
 		m_chord = chord;
+		m_channel = channel;
 	}
 
-	public MusicNote(MusicNote noteOrig, float[] indexOffsets, bool checkOrigDuplicates)
+	public MusicNote(MusicNote noteOrig, float[] indexOffsets, bool checkOrigDuplicates, uint channelOverride)
 	{
 		List<float> indicesCombined = new List<float>();
 		foreach (float index in noteOrig.m_chordIndices)
@@ -42,13 +44,16 @@ public class MusicNote : MusicBlock
 		LengthSixtyFourths = noteOrig.LengthSixtyFourths;
 		VolumePct = noteOrig.VolumePct;
 		m_chord = noteOrig.m_chord;
+		m_channel = (channelOverride == uint.MaxValue) ? noteOrig.m_channel : channelOverride;
 	}
 
 	public override uint SixtyFourthsTotal() => LengthSixtyFourths;
 
 	public override List<NoteTimePair> GetNotes(uint timeOffset) => new List<NoteTimePair> { new NoteTimePair { m_note = this, m_time = timeOffset } };
 
-	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth, uint channelIdx)
+	public override List<uint> GetChannels() => new List<uint> { m_channel };
+
+	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth)
 	{
 		List<MidiEvent> events = new List<MidiEvent>();
 
@@ -63,7 +68,7 @@ public class MusicNote : MusicBlock
 				midiChannelEvent = MidiHelper.MidiChannelEvent.Note_On,
 				parameter1 = (byte)keyCur,
 				parameter2 = (byte)(VolumePct * 100), // velocity
-				channel = (byte)channelIdx,
+				channel = (byte)m_channel,
 			};
 			events.Add(eventOn);
 		}
@@ -76,7 +81,7 @@ public class MusicNote : MusicBlock
 				deltaTime = endSample,
 				midiChannelEvent = MidiHelper.MidiChannelEvent.Note_Off,
 				parameter1 = (byte)ChordIndexToMidiKey(index, rootKey, scale),
-				channel = (byte)channelIdx,
+				channel = (byte)m_channel,
 			};
 			events.Add(eventOff);
 		}
@@ -93,11 +98,11 @@ public class MusicNote : MusicBlock
 		int splitCount = 2 << UnityEngine.Random.Range(0, 4); // TODO: take note length weights into account?
 		uint splitLength = LengthSixtyFourths / (uint)splitCount;
 		Assert.AreNotEqual(splitLength, 0U);
-		MusicNote splitNote = new MusicNote(m_chordIndices, splitLength, VolumePct, m_chord);
+		MusicNote splitNote = new MusicNote(m_chordIndices, splitLength, VolumePct, m_chord, m_channel);
 		List<MusicNote> splitNotes = Enumerable.Repeat(splitNote, splitCount).ToList();
 		for (int i = 0, n = splitNotes.Count; i < n; ++i)
 		{
-			splitNotes[i] = new MusicNote(splitNotes[i], new float[] { UnityEngine.Random.Range(0, m_chordIndices.Length) }, false);
+			splitNotes[i] = new MusicNote(splitNotes[i], new float[] { UnityEngine.Random.Range(0, m_chordIndices.Length) }, false, uint.MaxValue);
 		}
 		return new MusicBlockSimple(splitNotes.ToArray());
 	}

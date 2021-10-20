@@ -66,7 +66,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		}
 
 		// sequence into notes
-		List<MusicNote> notes = m_rhythm.Sequence(m_chordProgression);
+		List<MusicNote> notes = m_rhythm.Sequence(m_chordProgression, 0U);
 
 		if (!isScale)
 		{
@@ -78,21 +78,17 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 			}
 			else
 			{
-				notes.Add(new MusicNote(new float[] { 0.0f }, outroLength, UnityEngine.Random.Range(0.5f, 1.0f), MusicUtility.chordI7)); // TODO: coherent volume?
+				notes.Add(new MusicNote(new float[] { 0.0f }, outroLength, UnityEngine.Random.Range(0.5f, 1.0f), MusicUtility.chordI7, 0U)); // TODO: coherent volume?
 			}
 		}
 
 		// organize into block(s)
 		m_musicBlock = new MusicBlockSimple(notes.ToArray());
-		if (harmoniesMax > 0U)
+		for (uint channelItr = (harmoniesMax > 0U) ? 0U : 1U, n = (uint)instrumentIndices.Length; channelItr < n; ++channelItr)
 		{
-			m_musicBlock = new MusicBlockHarmony(m_musicBlock, harmoniesMax);
+			m_musicBlock = new MusicBlockHarmony(m_musicBlock, harmoniesMax, channelItr);
 		}
-		for (uint channelItr = 0U, n = (uint)instrumentIndices.Length; channelItr < n; ++channelItr)
-		{
-			m_events.AddRange(m_musicBlock.ToMidiEvents(0U, m_rootKey, m_scale, m_samplesPerSixtyFourth, channelItr)); // TODO: separate parts per instrument
-		}
-		m_events.Sort((e1, e2) => e1.deltaTime.CompareTo(e2.deltaTime));
+		m_events.AddRange(m_musicBlock.ToMidiEvents(0U, m_rootKey, m_scale, m_samplesPerSixtyFourth));
 	}
 
 	public override bool isPlaying
