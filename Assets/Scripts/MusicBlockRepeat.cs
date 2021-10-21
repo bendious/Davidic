@@ -21,11 +21,13 @@ public class MusicBlockRepeat : MusicBlock
 
 	public override uint SixtyFourthsTotal() => CombineViaSchedule(block => new List<uint> { block.SixtyFourthsTotal() }).Aggregate((a, b) => a + b);
 
-	public override List<NoteTimePair> GetNotes(uint timeOffset)
+	public override MusicNote AsNote(uint lengthSixtyFourths) => m_children[m_schedule.First()].AsNote(lengthSixtyFourths);
+
+	public override List<NoteTimePair> NotesOrdered(uint timeOffset)
 	{
 		uint timeItr = timeOffset;
 		return CombineViaSchedule(block => {
-			List<NoteTimePair> notes = block.GetNotes(timeItr);
+			List<NoteTimePair> notes = block.NotesOrdered(timeItr);
 			timeItr += block.SixtyFourthsTotal();
 			return notes;
 		});

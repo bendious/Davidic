@@ -15,11 +15,11 @@ public class MusicBlockHarmony : MusicBlock
 		bool sameChannel = melody.GetChannels().Contains(harmonyChannel);
 		Assert.IsTrue(harmoniesMax > 0U || !sameChannel);
 		List<MusicNote> harmonyNotes = new List<MusicNote>();
-		List<NoteTimePair> melodyNotes = (UnityEngine.Random.value < 0.333f ? melody.MergeNotes() : (UnityEngine.Random.value < 0.5f ? melody.SplitNotes() : melody)).GetNotes(0U); // TODO: more strategic splitting/merging (both w/i same block)?
-		uint timePrev = uint.MaxValue;
+		List<NoteTimePair> melodyNotes = (UnityEngine.Random.value < 0.333f ? melody.MergeNotes() : (UnityEngine.Random.value < 0.5f ? melody.SplitNotes() : melody)).NotesOrdered(0U); // TODO: more strategic splitting/merging (both w/i same block)?
+		uint endTimePrev = 0U;
 		foreach (NoteTimePair noteTime in melodyNotes)
 		{
-			if (noteTime.m_time == timePrev) // TODO: combine separate-block chords?
+			if (noteTime.m_time < endTimePrev) // TODO: combine separate-block chords/overlaps?
 			{
 				continue;
 			}
@@ -31,14 +31,16 @@ public class MusicBlockHarmony : MusicBlock
 				offsets.Add(UnityEngine.Random.Range(1, chordSize) * (UnityEngine.Random.value < 0.5f ? -1 : 1)); // NOTE that MusicNote() handles preventing duplicates, but we still avoid offsets of 0 to prevent creating empty notes
 			}
 			harmonyNotes.Add(new MusicNote(note, offsets.ToArray(), sameChannel, harmonyChannel));
-			timePrev = noteTime.m_time;
+			endTimePrev = noteTime.m_time + noteTime.m_note.SixtyFourthsTotal();
 		}
 		m_children = new MusicBlock[] { melody, new MusicBlockSimple(harmonyNotes.ToArray()) };
 	}
 
 	public override uint SixtyFourthsTotal() => CombineFromChildren(block => block.SixtyFourthsTotal(), Math.Max, null);
 
-	public override List<NoteTimePair> GetNotes(uint timeOffset) => CombineFromChildren(block => block.GetNotes(timeOffset), (a, b) => Enumerable.Concat(a, b).ToList(), list => list.Sort((a, b) => NoteSortCompare(a.m_time, b.m_time, a.m_note.LengthSixtyFourths, b.m_note.LengthSixtyFourths)));
+	public override MusicNote AsNote(uint lengthSixtyFourths) => m_children.First().AsNote(lengthSixtyFourths);
+
+	public override List<NoteTimePair> NotesOrdered(uint timeOffset) => CombineFromChildren(block => block.NotesOrdered(timeOffset), (a, b) => Enumerable.Concat(a, b).ToList(), list => list.Sort((a, b) => NoteSortCompare(a.m_time, b.m_time, a.m_note.LengthSixtyFourths, b.m_note.LengthSixtyFourths)));
 
 	public override List<uint> GetChannels() => CombineFromChildren(block => block.GetChannels(), (a, b) => a.Union(b).ToList(), null);
 

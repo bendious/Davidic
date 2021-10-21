@@ -15,7 +15,8 @@ public abstract class MusicBlock
 
 	public abstract uint SixtyFourthsTotal();
 
-	public abstract List<NoteTimePair> GetNotes(uint timeOffset);
+	public abstract MusicNote AsNote(uint lengthSixtyFourths);
+	public abstract List<NoteTimePair> NotesOrdered(uint timeOffset);
 	public abstract List<uint> GetChannels();
 
 	public abstract List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth);
@@ -25,7 +26,7 @@ public abstract class MusicBlock
 
 	public void Display(uint rootKey, MusicScale scale, string elementId, string[] instrumentNames, uint bpm)
 	{
-		List<NoteTimePair> noteTimeSequence = GetNotes(0U);
+		List<NoteTimePair> noteTimeSequence = NotesOrdered(0U);
 		uint[] timeSequence = noteTimeSequence.SelectMany(pair => Enumerable.Repeat(pair.m_time, (int)pair.m_note.KeyCount)).ToArray();
 		uint[] keySequence = noteTimeSequence.SelectMany(pair => pair.m_note.MidiKeys(rootKey, scale)).ToArray();
 		uint[] lengthSequence = noteTimeSequence.SelectMany(pair => Enumerable.Repeat(pair.m_note.LengthSixtyFourths, (int)pair.m_note.KeyCount)).ToArray();

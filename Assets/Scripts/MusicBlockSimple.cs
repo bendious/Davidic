@@ -18,11 +18,13 @@ public class MusicBlockSimple : MusicBlock
 
 	public override uint SixtyFourthsTotal() => ListFromBlocks(block => new List<uint> { block.SixtyFourthsTotal() }).Aggregate((a, b) => a + b);
 
-	public override List<NoteTimePair> GetNotes(uint timeOffset)
+	public override MusicNote AsNote(uint lengthSixtyFourths) => m_blocks.First().AsNote(lengthSixtyFourths);
+
+	public override List<NoteTimePair> NotesOrdered(uint timeOffset)
 	{
 		uint timeItr = timeOffset;
 		return ListFromBlocks(block => {
-			List<NoteTimePair> list = block.GetNotes(timeItr);
+			List<NoteTimePair> list = block.NotesOrdered(timeItr);
 			timeItr += block.SixtyFourthsTotal();
 			return list;
 		});
@@ -54,14 +56,13 @@ public class MusicBlockSimple : MusicBlock
 		{
 			uint sixtyFourthsMerged = 0U;
 			int j, m;
-			for (j = i, m = UnityEngine.Random.Range(i + 1, Math.Min(i + 3, n)); j < m && sixtyFourthsMerged < MusicUtility.sixtyFourthsPerMeasure && m_blocks[i].SixtyFourthsTotal() == m_blocks[j].SixtyFourthsTotal(); ++j) // TODO: restrict merge counts to powers of two? allow merging different length notes/blocks?
+			int mergeCountMax = UnityEngine.Random.Range(1, 5); // TODO: restrict to / prefer powers of two?
+			float[] firstChord = m_blocks[i].AsNote(uint.MaxValue).m_chord;
+			for (j = i, m = Math.Min(i + mergeCountMax, n); j < m && sixtyFourthsMerged < MusicUtility.sixtyFourthsPerMeasure && firstChord == m_blocks[j].AsNote(uint.MaxValue).m_chord; ++j)
 			{
 				sixtyFourthsMerged += m_blocks[j].SixtyFourthsTotal();
 			}
-			MusicNote noteMerged = new MusicNote(m_blocks[i].GetNotes(0U).First().m_note, new float[] { 0.0f }, false, uint.MaxValue) {
-				LengthSixtyFourths = sixtyFourthsMerged,
-			}; // TODO: better way of merging blocks?
-			manualBlocks.Add(noteMerged);
+			manualBlocks.Add(m_blocks[i].AsNote(sixtyFourthsMerged));
 			i = j - 1;
 		}
 		return new MusicBlockSimple(manualBlocks.ToArray());

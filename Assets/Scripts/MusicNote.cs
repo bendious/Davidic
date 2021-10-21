@@ -9,7 +9,7 @@ using UnityEngine.Assertions;
 public class MusicNote : MusicBlock
 {
 	private readonly float[] m_chordIndices;
-	private readonly float[] m_chord;
+	public readonly float[] m_chord;
 	public readonly uint m_channel;
 
 
@@ -49,7 +49,18 @@ public class MusicNote : MusicBlock
 
 	public override uint SixtyFourthsTotal() => LengthSixtyFourths;
 
-	public override List<NoteTimePair> GetNotes(uint timeOffset) => new List<NoteTimePair> { new NoteTimePair { m_note = this, m_time = timeOffset } };
+	public override MusicNote AsNote(uint lengthSixtyFourths)
+	{
+		if (lengthSixtyFourths == LengthSixtyFourths || lengthSixtyFourths == uint.MaxValue)
+		{
+			return this;
+		}
+		MusicNote copy = (MusicNote)MemberwiseClone();
+		copy.LengthSixtyFourths = lengthSixtyFourths;
+		return copy;
+	}
+
+	public override List<NoteTimePair> NotesOrdered(uint timeOffset) => new List<NoteTimePair> { new NoteTimePair { m_note = this, m_time = timeOffset } };
 
 	public override List<uint> GetChannels() => new List<uint> { m_channel };
 
