@@ -6,8 +6,8 @@ using UnityEngine.Assertions;
 
 public class MusicRhythm
 {
-	private readonly uint[] m_lengthsSixtyFourths;
-	private readonly float[] m_chordIndices;
+	public readonly uint[] m_lengthsSixtyFourths;
+	public readonly float[] m_chordIndices;
 
 
 	public static MusicRhythm Random(ChordProgression chords, float[] noteLengthWeights)

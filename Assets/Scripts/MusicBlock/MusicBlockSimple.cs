@@ -20,11 +20,11 @@ public class MusicBlockSimple : MusicBlock
 
 	public override MusicNote AsNote(uint lengthSixtyFourths) => m_blocks.First().AsNote(lengthSixtyFourths);
 
-	public override List<NoteTimePair> NotesOrdered(uint timeOffset)
+	public override List<ValueTuple<MusicNote, uint>> NotesOrdered(uint timeOffset)
 	{
 		uint timeItr = timeOffset;
 		return ListFromBlocks(block => {
-			List<NoteTimePair> list = block.NotesOrdered(timeItr);
+			List<ValueTuple<MusicNote, uint>> list = block.NotesOrdered(timeItr);
 			timeItr += block.SixtyFourthsTotal();
 			return list;
 		});

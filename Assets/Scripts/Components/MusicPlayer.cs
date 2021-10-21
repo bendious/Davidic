@@ -18,7 +18,9 @@ public class MusicPlayer : MonoBehaviour
 	public Dropdown m_scaleDropdown;
 	public ScrollRect m_instrumentScrollview;
 	public Toggle m_chordRegenToggle;
+	public InputField m_chordField;
 	public Toggle m_rhythmRegenToggle;
+	public InputField m_rhythmField;
 	public InputField[] m_noteLengthFields;
 	public InputField m_harmonyCountField;
 	public InputField m_instrumentCountField;
@@ -92,12 +94,20 @@ public class MusicPlayer : MonoBehaviour
 		uint[] instrumentIndices = instrumentList.Distinct().ToArray();
 		string[] instrumentNames = instrumentIndices.Select(index => m_musicStreamSynthesizer.SoundBank.getInstrument((int)index, false/*?*/).Name).ToArray();
 
+		// parse input
 		uint bpm = uint.Parse(m_tempoField.text);
-		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, m_musicSequencer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, instrumentIndices, bpm, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn, m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray(), uint.Parse(m_harmonyCountField.text));
+		float[][] chordList = m_chordField.text.Length == 0 ? new float[][] {} : m_chordField.text.Split(new char[] { ';' }).Select(str => str.Split(new char[] { ',' }).Select(str => float.Parse(str)).ToArray()).ToArray();
+		uint[] rhythmLengths = m_rhythmField.text.Length == 0 ? new uint[] {} : m_rhythmField.text.Split(new char[] { ';' }).Select(str => uint.Parse(str.Split(new char[] { ',' })[0])).ToArray();
+		float[] rhythmChords = m_rhythmField.text.Length == 0 ? new float[] {} : m_rhythmField.text.Split(new char[] { ';' }).Select(str => float.Parse(str.Split(new char[] { ',' })[1])).ToArray();
+
+		// create sequencer
+		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, instrumentIndices, bpm, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn, m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray(), uint.Parse(m_harmonyCountField.text), new ChordProgression(chordList.Select(list => list.ToArray()).ToArray()), new MusicRhythm(rhythmLengths, rhythmChords));
 
 		// update display
+		m_chordField.text = m_musicSequencer.m_chordProgression.m_progression.Aggregate("", (str, chord) => str + (str == "" ? "" : ";") + chord.Aggregate("", (str, idx) => str + (str == "" ? "" : ",") + idx));
+		m_rhythmField.text = m_musicSequencer.m_rhythm.m_lengthsSixtyFourths.Zip(m_musicSequencer.m_rhythm.m_chordIndices, (a, b) => a + "," + b).Aggregate((a, b) => a + ";" + b);
 		MusicDisplay.Start();
-		m_musicSequencer.Display("osmd-chords", "osmd-main", instrumentNames, bpm);
+		m_musicSequencer.Display("osmd-chords", "osmd-rhythm", "osmd-main", instrumentNames, bpm);
 		MusicDisplay.Finish();
 	}
 

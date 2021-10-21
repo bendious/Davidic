@@ -60,7 +60,7 @@ public class MusicNote : MusicBlock
 		return copy;
 	}
 
-	public override List<NoteTimePair> NotesOrdered(uint timeOffset) => new List<NoteTimePair> { new NoteTimePair { m_note = this, m_time = timeOffset } };
+	public override List<ValueTuple<MusicNote, uint>> NotesOrdered(uint timeOffset) => new List<ValueTuple<MusicNote, uint>> { new ValueTuple<MusicNote, uint>(this, timeOffset) };
 
 	public override List<uint> GetChannels() => new List<uint> { m_channel };
 

@@ -23,11 +23,11 @@ public class MusicBlockRepeat : MusicBlock
 
 	public override MusicNote AsNote(uint lengthSixtyFourths) => m_children[m_schedule.First()].AsNote(lengthSixtyFourths);
 
-	public override List<NoteTimePair> NotesOrdered(uint timeOffset)
+	public override List<ValueTuple<MusicNote, uint>> NotesOrdered(uint timeOffset)
 	{
 		uint timeItr = timeOffset;
 		return CombineViaSchedule(block => {
-			List<NoteTimePair> notes = block.NotesOrdered(timeItr);
+			List<ValueTuple<MusicNote, uint>> notes = block.NotesOrdered(timeItr);
 			timeItr += block.SixtyFourthsTotal();
 			return notes;
 		});
