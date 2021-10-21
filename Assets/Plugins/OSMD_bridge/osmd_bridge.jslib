@@ -16,6 +16,7 @@ mergeInto(LibraryManager.library, {
 
 		// constants
 		/*const*/var sixtyfourths_per_quarter = 16;
+		/*const*/var sixtyfourths_beam_max = 8;
 		/*const*/var semitones_from_c = [ 0, 2, 4, 5, 7, 9, 11 ];
 		/*const*/var semitones_per_octave = 12;
 		/*const*/var keys_per_octave = 7;
@@ -34,6 +35,79 @@ mergeInto(LibraryManager.library, {
 			48: ['half', '<dot/>'],
 			64: ['whole', ''],
 		};
+
+		// gather input into object array
+		var note_objects = [[]];
+		for (var note_idx = 0; note_idx < note_count; ++note_idx) {
+			var time_cur = inputArrayUint(times, note_idx);
+			var key_cur = inputArrayUint(keys, note_idx);
+			var length_cur = inputArrayUint(lengths, note_idx);
+			var channel_cur = inputArrayUint(note_channels, note_idx);
+
+			// expand channel array if necessary, get previous note
+			while (note_objects.length <= channel_cur) {
+				note_objects.push([]);
+			}
+			var note_list = note_objects[channel_cur];
+			var note_prev = (note_list.length > 0) ? note_list[note_list.length - 1] : undefined;
+
+			// update/add note
+			if (note_prev != undefined && time_cur == note_prev.time && length_cur == note_prev.length) {
+				note_prev.keys.add(key_cur);
+			} else {
+				var note_new = {
+					time: time_cur,
+					keys: new Set([ key_cur ]), // TODO: ensure duplicate keys aren't added code-side?
+					length: length_cur,
+					ties: [],
+				};
+				note_list.push(note_new);
+			}
+		}
+		console.assert(note_objects.length == instrument_count);
+		console.log("Original notes: " + JSON.stringify(note_objects)); // NOTE the strinification to preserve the original state
+
+		// split notes crossing a measure boundary or of uneven length
+		var length_per_measure = (is_untimed ? Number.POSITIVE_INFINITY : 64); // TODO: account for different time signatures
+		for (const note_list of note_objects) {
+			for (var list_idx = 0; list_idx < note_list.length; ++list_idx) {
+				var note_obj = note_list[list_idx];
+				var time_val_next = note_obj.time + note_obj.length;
+				var length_post = parseInt(time_val_next) % length_per_measure;
+
+				if ((length_post <= 0 || length_post >= note_obj.length) && (note_obj.length <= 0 || note_obj.length in types_by_length)) {
+					// don't need to split this note
+					continue;
+				}
+
+				if (length_post == note_obj.length) {
+					// get longest standard/dotted length less than the current length
+					var length_itr;
+					for (length_itr = note_obj.length; length_itr > 0 && !(length_itr in types_by_length); --length_itr); // TODO: efficiency?
+					length_post = length_itr;
+				}
+
+				// shorten and tie existing note
+				note_obj.length -= length_post;
+				time_val_next -= length_post;
+				note_obj.ties.push('start');
+
+				// add new tied note (after any harmony notes that come before it)
+				var idx_new;
+				for (idx_new = list_idx + 1; idx_new < note_list.length && note_list[idx_new].time < time_val_next; ++idx_new);
+				var note_new = {
+					time: time_val_next,
+					keys: note_obj.keys,
+					length: length_post,
+					ties: [ 'stop' ],
+				};
+				note_list.splice(idx_new, 0, note_new);
+
+				// re-process the shortened note next iteration in case it is now an odd length
+				--list_idx;
+			}
+		}
+		console.log(note_objects);
 
 		// MusicXML header
 		// TODO: use timewise rather than partwise?
@@ -56,7 +130,11 @@ mergeInto(LibraryManager.library, {
 		xml_str += '\n\
 			</part-list>';
 
+		var per_note_str = (is_untimed ? '\t\t\t\t\t\t\t<notehead>x</notehead>\n' : '');
+
 		for (var channel_idx = 0; channel_idx < instrument_count; ++channel_idx) {
+			var note_list = note_objects[channel_idx];
+
 			var instrument_name_str = Pointer_stringify(inputArrayUint(instrument_names, channel_idx)); // TODO: don't assume string pointers are uints?
 			xml_str += '\n\
 				<part id="' + instrument_name_str + '">' + (is_untimed ? '\n\
@@ -100,78 +178,38 @@ mergeInto(LibraryManager.library, {
 						<sound tempo="' + bpm + '"/>\n\
 					</direction>');
 
-			var length_per_measure = (is_untimed ? Number.POSITIVE_INFINITY : 64); // TODO: account for different time signatures
-			var per_note_str = (is_untimed ? '\t\t\t\t\t\t\t<notehead>x</notehead>\n' : '');
-
 			// accumulators / inter-note memory
 			var time_val_prev = -1;
 			var length_val_prev = -1;
 			var overlap_amount = 0; // TODO: support more than two overlapping voices?
-			var beam_before = false;
 
 			// per-note
-			for (var i = 0; i < note_count; ++i) {
-				var channel_val = inputArrayUint(note_channels, i);
-				if (channel_val != channel_idx) {
-					continue;
+			for (var note_idx = 0; note_idx < note_list.length; ++note_idx) {
+				var note_obj = note_list[note_idx];
+				var time_val = note_obj.time;
+				var length_val = note_obj.length;
+
+				// overlap w/ previous note(s) if necessary
+				var note_prev_end = time_val_prev + length_val_prev;
+				if (time_val < note_prev_end) {
+					overlap_amount = note_prev_end - time_val;
+					xml_str += '\n\
+						<backup>\n\
+							<duration>' + overlap_amount + '</duration>\n\
+						</backup>';
 				}
 
-				var time_vals = [ inputArrayUint(times, i) ];
-				var key_vals = [ inputArrayUint(keys, i) ];
-				var length_vals = [ inputArrayUint(lengths, i) ];
-				console.log("time " + time_vals[0] + ", key " + key_vals[0] + ", length " + length_vals[0] + ", channel " + channel_val); // TEMP?
+				// add barline if appropriate
+				var new_measure = (overlap_amount <= 0 && time_val > 0 && time_val % length_per_measure == 0);
+				if (new_measure) {
+					xml_str += '\n\
+						</measure>\n\
+						<measure>';
+				}
 
-				var tied_chord_count = 0;
-				for (var tied_idx = 0; tied_idx < length_vals.length; ++tied_idx) {
-					// split if crossing a measure boundary
-					var time_val_next = time_vals[tied_idx] + length_vals[tied_idx];
-					var length_post = parseInt(time_val_next) % length_per_measure;
-					while ((length_post > 0 && length_post < length_vals[tied_idx]) || !(length_vals[tied_idx] in types_by_length)) {
-						if (length_post == length_vals[tied_idx]) {
-							var length_itr;
-							for (length_itr = length_vals[tied_idx]; length_itr > 0 && !(length_itr in types_by_length); --length_itr);
-							length_post = length_itr;
-						}
-						length_vals[tied_idx] -= length_post;
-						time_val_next -= length_post;
-						for (; time_val_next > inputArrayUint(times, i + 1); ++i) {
-							if (inputArrayUint(note_channels, i + 1) != channel_val) {
-								continue;
-							}
-							length_vals.splice(tied_idx, 0, inputArrayUint(lengths, i + 1));
-							key_vals.splice(tied_idx, 0, inputArrayUint(keys, i + 1));
-							time_vals.splice(tied_idx, 0, inputArrayUint(times, i + 1));
-						}
-						length_vals.splice(tied_idx + 1, 0, length_post);
-						key_vals.splice(tied_idx + 1, 0, key_vals[tied_idx]);
-						time_vals.splice(tied_idx + 1, 0, time_val_next);
-						++tied_chord_count;
-					}
-
-					var is_chord = (time_vals[tied_idx] == time_val_prev && length_vals[tied_idx] == length_val_prev);
-
-					// overlap w/ previous note(s) if necessary
-					if (!is_chord && time_vals[tied_idx] < time_val_prev + length_val_prev) {
-						overlap_amount = time_val_prev + length_val_prev - time_vals[tied_idx];
-						xml_str += '\n\
-							<backup>\n\
-								<duration>' + overlap_amount + '</duration>\n\
-							</backup>';
-					}
-
-					var length_val = length_vals[tied_idx];
-					var key_val = key_vals[tied_idx];
-					var time_val = time_vals[tied_idx];
-
-					// measure bar if appropriate
-					var new_measure = (!is_chord && overlap_amount <= 0 && time_val > 0 && time_val % length_per_measure == 0);
-					if (new_measure) {
-						xml_str += '\n\
-							</measure>\n\
-							<measure>';
-					}
-
-					// note
+				var key_idx = 0;
+				for (const key_val of note_obj.keys.values()) {
+					// per-note tags
 					var pitch_tag = (is_untimed ? 'unpitched' : 'pitch');
 					var pitch_prefix = (is_untimed ? 'display-' : '');
 					var note_semitones_from_c = key_val % semitones_per_octave;
@@ -186,16 +224,15 @@ mergeInto(LibraryManager.library, {
 					var type_and_dot_str = (length_val in types_by_length) ? types_by_length[length_val] : [ 'ERROR', '' ];
 					var type_str = type_and_dot_str[0];
 					var dot_str = type_and_dot_str[1];
-					beam_before = !new_measure && (is_chord ? beam_before : i > 0 && length_val <= 8 && length_val_prev == length_val);
-					var j = i + 1;
-					for (; j < note_count && length_val <= 8 && (inputArrayUint(times, j) == time_val || inputArrayUint(note_channels, j) != channel_val); ++j) {} // TODO: better channel filtering?
-					var beam_after = (j < note_count && length_val <= 8 && inputArrayUint(lengths, j) <= 8 && inputArrayUint(note_channels, j) == channel_val); // TODO: detect measure end?
+					var beam_before = !new_measure && (note_idx > 0 && length_val <= sixtyfourths_beam_max && length_val_prev <= sixtyfourths_beam_max);
+					var beam_after = (note_idx + 1 < note_list.length && length_val <= sixtyfourths_beam_max && note_list[note_idx + 1].length <= sixtyfourths_beam_max); // TODO: detect measure end?
 					var beam_str = (beam_before && beam_after) ? 'continue' : (beam_before ? 'end' : (beam_after ? 'begin' : ''));
 					var accidental_str = (semitone_offset > 0 ? 'sharp' : semitone_offset < 0 ? 'flat' : '');
-					var tie_type_str = (tied_idx < length_vals.length / (tied_chord_count + 1) ? 'start' : (tied_idx >= length_vals.length - length_vals.length / (tied_chord_count + 1) ? 'stop' : 'stop"/><tied type="start'));
+
+					// add to XML
 					xml_str += '\n\
 						<note>\n\
-							' + (is_chord ? '<chord/>' : '') +
+							' + (key_idx > 0 ? '<chord/>' : '') +
 							'<' + pitch_tag + '>\n\
 								<' + pitch_prefix + 'step>' + note_letter + '</' + pitch_prefix + 'step>\n\
 								<alter>' + semitone_offset + '</alter>\n\
@@ -206,15 +243,23 @@ mergeInto(LibraryManager.library, {
 							<type>' + type_str + '</type>' + dot_str + '\n'
 							+ (beam_str == '' ? '' : '\t\t\t\t\t\t\t<beam number="1">' + beam_str + '</beam>\n')
 							+ (accidental_str == '' ? '' : ('\t\t\t\t\t\t\t<accidental>' + accidental_str + '</accidental>\n'))
-							+ per_note_str
-							+ (length_vals.length > 1 ? '\t\t\t\t\t\t\t<notations><tied type="' + tie_type_str + '"/></notations>\n' : '') + '\
-						</note>';
+							+ per_note_str;
+					if (note_obj.ties.length > 0) {
+						xml_str += '\t\t\t\t\t\t\t<notations>\n';
+						for (const tie_type_str of note_obj.ties) {
+							xml_str += '\t\t\t\t\t\t\t\t<tied type="' + tie_type_str + '"/>\n';
+						}
+						xml_str += '\t\t\t\t\t\t\t</notations>\n';
+					}
+					xml_str += '\t\t\t\t\t\t</note>';
 					// TODO: <{p/mp/mf/f}/>?
 
-					time_val_prev = time_val;
-					length_val_prev = length_val;
-					overlap_amount -= length_val;
+					++key_idx;
 				}
+
+				time_val_prev = time_val;
+				length_val_prev = length_val;
+				overlap_amount -= length_val;
 			}
 
 			if (!is_untimed) {
