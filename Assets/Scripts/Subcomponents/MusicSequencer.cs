@@ -23,7 +23,9 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	private readonly uint m_samplesPerSecond = 44100; // TODO: combine w/ PlayMusic::m_samplesPerSecond
 	private readonly uint m_samplesPerSixtyFourth;
 
+	public readonly uint m_rootKeyIndex;
 	private readonly uint m_rootKey;
+	public readonly uint m_scaleIndex;
 	private readonly MusicScale m_scale;
 
 	// TODO: convert to MidiFile?
@@ -37,7 +39,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 
 	//--Public Methods
-	public MusicSequencer(StreamSynthesizer synth, bool isScale, uint rootKeyIndex, uint scaleIndex, uint[] instrumentIndices, uint bpm, bool regenChords, bool regenRhythm, float[] noteLengthWeights, uint harmoniesMax, ChordProgression manualChords, MusicRhythm manualRhythm)
+	public MusicSequencer(StreamSynthesizer synth, bool isScale, uint rootKeyIndex, uint scaleIndex, uint[] instrumentIndices, uint bpm, bool regenScale, bool regenChords, bool regenRhythm, float[] noteLengthWeights, uint harmoniesMax, ChordProgression manualChords, MusicRhythm manualRhythm)
 		: base(synth)
 	{
 		// initialize
@@ -46,8 +48,11 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		m_samplesPerSixtyFourth = m_samplesPerSecond * MusicUtility.secondsPerMinute / bpm / MusicUtility.sixtyFourthsPerBeat;
 
 		// determine constituent pieces
-		m_rootKey = (uint)(MusicUtility.midiMiddleAKey + MusicUtility.ScaleOffset(MusicUtility.naturalMinorScale, (int)rootKeyIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
-		m_scale = new MusicScale(MusicUtility.scales[scaleIndex].m_semitones, rootKeyToFifths[scaleIndex,rootKeyIndex], MusicUtility.scales[scaleIndex].m_mode);
+		m_rootKeyIndex = regenScale ? (uint)UnityEngine.Random.Range(0, 8) : rootKeyIndex;
+		m_scaleIndex = regenScale ? (uint)UnityEngine.Random.Range(0, MusicUtility.scales.Length) : scaleIndex;
+		m_rootKey = (uint)(MusicUtility.midiMiddleAKey + MusicUtility.ScaleOffset(MusicUtility.naturalMinorScale, (int)m_rootKeyIndex)); // NOTE using A-minor since it contains only the natural notes // TODO: support scales starting on sharps/flats?
+		MusicScale scaleOrig = MusicUtility.scales[m_scaleIndex];
+		m_scale = new MusicScale(scaleOrig.m_semitones, rootKeyToFifths[scaleIndex,rootKeyIndex], scaleOrig.m_mode);
 		m_chordProgression = isScale ? new ChordProgression(new float[][] { MusicUtility.chordI, MusicUtility.chordII, MusicUtility.chordIII, MusicUtility.chordIV, MusicUtility.chordV, MusicUtility.chordVI, MusicUtility.chordVII, MusicUtility.chordI.Select(index => index + MusicUtility.tonesPerOctave).ToArray() }) : (regenChords || manualChords.m_progression.Length <= 0) ? MusicUtility.chordProgressions[UnityEngine.Random.Range(0, MusicUtility.chordProgressions.Length)] : manualChords;
 		m_rhythm = isScale ? new MusicRhythm(new uint[] { MusicUtility.sixtyFourthsPerBeat / 2U }, new float[] { 0.0f }) : (regenRhythm || manualRhythm.m_lengthsSixtyFourths.Length <= 0 ? MusicRhythm.Random(m_chordProgression, noteLengthWeights) : manualRhythm);
 

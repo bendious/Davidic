@@ -1,5 +1,6 @@
 using CSharpSynth.Synthesis;
 using System.Collections.Generic;
+using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -14,6 +15,7 @@ public class MusicPlayer : MonoBehaviour
 	public uint m_maxPolyphony = 40U;
 
 	public InputField m_tempoField;
+	public Toggle m_scaleRegenToggle;
 	public Dropdown m_rootNoteDropdown;
 	public Dropdown m_scaleDropdown;
 	public ScrollRect m_instrumentScrollview;
@@ -89,7 +91,7 @@ public class MusicPlayer : MonoBehaviour
 		List<uint> instrumentList = new List<uint>();
 		for (uint i = 0U, n = uint.Parse(m_instrumentCountField.text); i < n; ++i)
 		{
-			instrumentList.Add((uint)candidateIndices[Random.Range(0, candidateIndices.Count)]);
+			instrumentList.Add((uint)candidateIndices[UnityEngine.Random.Range(0, candidateIndices.Count)]);
 		}
 		uint[] instrumentIndices = instrumentList.Distinct().ToArray();
 		string[] instrumentNames = instrumentIndices.Select(index => m_musicStreamSynthesizer.SoundBank.getInstrument((int)index, false/*?*/).Name).ToArray();
@@ -101,9 +103,13 @@ public class MusicPlayer : MonoBehaviour
 		float[] rhythmChords = m_rhythmField.text.Length == 0 ? new float[] {} : m_rhythmField.text.Split(new char[] { ';' }).Select(str => float.Parse(str.Split(new char[] { ',' })[1])).ToArray();
 
 		// create sequencer
-		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, instrumentIndices, bpm, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn, m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray(), uint.Parse(m_harmonyCountField.text), new ChordProgression(chordList.Select(list => list.ToArray()).ToArray()), new MusicRhythm(rhythmLengths, rhythmChords));
+		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, isScale, (uint)m_rootNoteDropdown.value, (uint)m_scaleDropdown.value, instrumentIndices, bpm, m_scaleRegenToggle.isOn, m_chordRegenToggle.isOn, m_rhythmRegenToggle.isOn, m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray(), uint.Parse(m_harmonyCountField.text), new ChordProgression(chordList.Select(list => list.ToArray()).ToArray()), new MusicRhythm(rhythmLengths, rhythmChords));
 
 		// update display
+		m_rootNoteDropdown.value = (int)m_musicSequencer.m_rootKeyIndex;
+		m_rootNoteDropdown.RefreshShownValue();
+		m_scaleDropdown.value = (int)m_musicSequencer.m_scaleIndex;
+		m_scaleDropdown.RefreshShownValue();
 		m_chordField.text = m_musicSequencer.m_chordProgression.m_progression.Aggregate("", (str, chord) => str + (str == "" ? "" : ";") + chord.Aggregate("", (str, idx) => str + (str == "" ? "" : ",") + idx));
 		m_rhythmField.text = m_musicSequencer.m_rhythm.m_lengthsSixtyFourths.Zip(m_musicSequencer.m_rhythm.m_chordIndices, (a, b) => a + "," + b).Aggregate((a, b) => a + ";" + b);
 		MusicDisplay.Start();
