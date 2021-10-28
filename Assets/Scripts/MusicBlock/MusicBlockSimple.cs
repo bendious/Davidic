@@ -61,7 +61,7 @@ public class MusicBlockSimple : MusicBlock
 			uint sixtyFourthsMerged = 0U;
 			int j, m;
 			int doublingCountMax = Mathf.RoundToInt(Mathf.Log(MusicUtility.sixtyFourthsPerMeasure / block_cur.SixtyFourthsTotal(), 2.0f));
-			int mergeCountMax = 1 << Utility.RandomWeighted(Enumerable.Range(1, doublingCountMax).ToArray(), new ArraySegment<float>(noteLengthWeights, noteLengthWeights.Length - doublingCountMax, doublingCountMax).ToArray());
+			int mergeCountMax = doublingCountMax <= 0 ? 1 : 1 << Utility.RandomWeighted(Enumerable.Range(1, doublingCountMax).ToArray(), new ArraySegment<float>(noteLengthWeights, noteLengthWeights.Length - doublingCountMax, doublingCountMax).ToArray()); // TODO: don't assume all notes will be the same length?
 			float[] firstChord = block_cur.AsNote(uint.MaxValue).m_chord;
 			for (j = i, m = Math.Min(i + mergeCountMax, n); j < m && sixtyFourthsMerged < MusicUtility.sixtyFourthsPerMeasure && firstChord == m_blocks[j].AsNote(uint.MaxValue).m_chord; ++j)
 			{

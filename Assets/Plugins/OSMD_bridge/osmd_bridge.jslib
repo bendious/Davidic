@@ -75,12 +75,13 @@ mergeInto(LibraryManager.library, {
 				var time_val_next = note_obj.time + note_obj.length;
 				var length_post = parseInt(time_val_next) % length_per_measure;
 
-				if ((length_post <= 0 || length_post >= note_obj.length) && (note_obj.length <= 0 || note_obj.length in types_by_length)) {
+				var within_measure = (length_post <= 0 || length_post >= note_obj.length);
+				if (within_measure && (note_obj.length <= 0 || note_obj.length in types_by_length)) {
 					// don't need to split this note
 					continue;
 				}
 
-				if (length_post == note_obj.length) {
+				if (within_measure) {
 					// get longest standard/dotted length less than the current length
 					var length_itr;
 					for (length_itr = note_obj.length; length_itr > 0 && !(length_itr in types_by_length); --length_itr); // TODO: efficiency?
@@ -189,14 +190,27 @@ mergeInto(LibraryManager.library, {
 				var time_val = note_obj.time;
 				var length_val = note_obj.length;
 
-				// overlap w/ previous note(s) if necessary
-				var note_prev_end = time_val_prev + length_val_prev;
+				var note_prev_end = Math.max(0, time_val_prev + length_val_prev);
 				if (time_val < note_prev_end) {
+					// overlap w/ previous note(s)
 					overlap_amount = note_prev_end - time_val;
 					xml_str += '\n\
 						<backup>\n\
 							<duration>' + overlap_amount + '</duration>\n\
 						</backup>';
+				} else if (time_val > note_prev_end) {
+					// add rest
+					// TODO: handle non-standard lengths
+					var type_and_dot_str = (length_val in types_by_length) ? types_by_length[length_val] : [ 'ERROR', '' ];
+					var type_str = type_and_dot_str[0];
+					var dot_str = type_and_dot_str[1];
+					xml_str += '\n\
+						<note>\n\
+							<rest/>\n\
+							<duration>' + (time_val - note_prev_end) + '</duration>\n\
+							<voice>1</voice>\n\
+							<type>' + type_str + '</type>' + dot_str + '\n\
+						</note>';
 				}
 
 				// add barline if appropriate
