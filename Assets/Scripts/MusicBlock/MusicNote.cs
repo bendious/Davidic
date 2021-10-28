@@ -100,13 +100,16 @@ public class MusicNote : MusicBlock
 		return events;
 	}
 
-	public override MusicBlock SplitNotes()
+	public override MusicBlock SplitNotes(float[] noteLengthWeights)
 	{
+		Assert.AreEqual(noteLengthWeights.Length, MusicUtility.tonesPerOctave);
 		if (LengthSixtyFourths < MusicUtility.sixtyFourthsPerBeat || UnityEngine.Random.value < 0.5f) // TODO: better conditions?
 		{
 			return this;
 		}
-		int splitCount = 2 << UnityEngine.Random.Range(0, 4); // TODO: take note length weights into account?
+		int halveCountMax = Mathf.RoundToInt(Mathf.Log(LengthSixtyFourths, 2.0f));
+		Assert.IsTrue(halveCountMax > 0);
+		int splitCount = 1 << Utility.RandomWeighted(Enumerable.Range(1, halveCountMax).ToArray(), new ArraySegment<float>(noteLengthWeights, 0, halveCountMax).Reverse().ToArray());
 		uint splitLength = LengthSixtyFourths / (uint)splitCount;
 		Assert.AreNotEqual(splitLength, 0U);
 		MusicNote splitNote = new MusicNote(m_chordIndices, splitLength, VolumePct, m_chord, m_channel);
@@ -118,7 +121,7 @@ public class MusicNote : MusicBlock
 		return new MusicBlockSimple(splitNotes.ToArray());
 	}
 
-	public override MusicBlock MergeNotes() => this;
+	public override MusicBlock MergeNotes(float[] noteLengthWeights) => this;
 
 	public bool ContainsRoot()
 	{
@@ -157,7 +160,7 @@ public class MusicNote : MusicBlock
 		float indexMod = Utility.Modulo(index, chordSizeF);
 		Assert.IsTrue(indexMod < chordSizeF);
 
-		return (indexFractAbs <= 0.333f || indexFractAbs >= 0.667f) ? m_chord[(uint)Mathf.Round(indexMod)] : (m_chord[(int)Mathf.Floor(indexMod)] + m_chord[Utility.Modulo((int)Math.Ceiling(indexMod), chordSizeI)]) * 0.5f; // TODO: better way of picking off-chord notes?
+		return (indexFractAbs <= 0.333f || indexFractAbs >= 0.667f) ? m_chord[(uint)Mathf.Round(indexMod)] : (m_chord[Mathf.FloorToInt(indexMod)] + m_chord[Utility.Modulo(Mathf.CeilToInt(indexMod), chordSizeI)]) * 0.5f; // TODO: better way of picking off-chord notes?
 	}
 
 	private uint ChordIndexToMidiKey(float index, uint rootNote, MusicScale scale)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 
@@ -12,7 +13,7 @@ public class MusicRhythm
 
 	public static MusicRhythm Random(ChordProgression chords, float[] noteLengthWeights)
 	{
-		/*const*/ int type_shift_max = (int)Math.Log(MusicUtility.sixtyFourthsPerMeasure, 2.0);
+		/*const*/ int type_shift_max = Mathf.RoundToInt(Mathf.Log(MusicUtility.sixtyFourthsPerMeasure, 2.0f));
 		const int randomHalfMeasuresMin = 1;
 		const int randomHalfMeasuresMax = 4;
 		int sixtyFourthsLeft = (int)MusicUtility.sixtyFourthsPerMeasure / 2 * UnityEngine.Random.Range(randomHalfMeasuresMin, randomHalfMeasuresMax + 1);
@@ -22,9 +23,9 @@ public class MusicRhythm
 		List<float> indices = new List<float>();
 		int chordSizeMax = chords.m_progression.Max(progression => progression.Length); // TODO: use specific chords for different points in the progression?
 		while (sixtyFourthsLeft > 0) {
-			int[] allowedShifts = Enumerable.Range(0, Math.Min((int)Math.Log(sixtyFourthsLeft, 2.0f) + 1, noteLengthWeights.Length)).ToArray();
+			int[] allowedShifts = Enumerable.Range(0, Math.Min(Mathf.RoundToInt(Mathf.Log(sixtyFourthsLeft, 2.0f)) + 1, noteLengthWeights.Length)).ToArray();
 			uint lengthNew = (uint)(1 << Utility.RandomWeighted(allowedShifts, noteLengthWeights)); // 1, 2, 4, 8, 16, 32, or 64, limited by remaining length // TODO: favor placing longer notes at the end rather than the beginning?
-			int groupSize = 1 << UnityEngine.Random.Range(0, (int)Math.Log(Math.Max(1, Math.Min(MusicUtility.sixtyFourthsPerMeasure / 2U, sixtyFourthsLeft) / lengthNew), 2.0)); // 1, 2, 4, 8, (etc); limited by remaining size
+			int groupSize = 1 << UnityEngine.Random.Range(0, Mathf.RoundToInt(Mathf.Log(Math.Max(1, Math.Min(MusicUtility.sixtyFourthsPerMeasure / 2U, sixtyFourthsLeft) / lengthNew), 2.0f))); // 1, 2, 4, 8, (etc); limited by remaining size
 
 			lengths.AddRange(Enumerable.Repeat(lengthNew, groupSize).ToArray());
 			indices.AddRange(Enumerable.Repeat(0.0f, groupSize).Select(i => (float)UnityEngine.Random.Range(0, chordSizeMax)).ToArray()); // TODO: allow chord octave wrapping here as well as in harmonies?

@@ -86,7 +86,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		m_musicBlock = new MusicBlockSimple(notes.ToArray());
 		for (uint channelItr = (harmoniesMax > 0U) ? 0U : 1U, n = (uint)instrumentIndices.Length; channelItr < n; ++channelItr)
 		{
-			m_musicBlock = new MusicBlockHarmony(m_musicBlock, harmoniesMax, channelItr);
+			m_musicBlock = new MusicBlockHarmony(m_musicBlock, harmoniesMax, channelItr, noteLengthWeights);
 		}
 		m_events.AddRange(m_musicBlock.ToMidiEvents(0U, m_rootKey, m_scale, m_samplesPerSixtyFourth));
 	}

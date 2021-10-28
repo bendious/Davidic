@@ -10,12 +10,12 @@ public class MusicBlockHarmony : MusicBlock
 	private readonly MusicBlock[] m_children;
 
 
-	public MusicBlockHarmony(MusicBlock melody, uint harmoniesMax, uint harmonyChannel)
+	public MusicBlockHarmony(MusicBlock melody, uint harmoniesMax, uint harmonyChannel, float[] noteLengthWeights)
 	{
 		bool sameChannel = melody.GetChannels().Contains(harmonyChannel);
 		Assert.IsTrue(harmoniesMax > 0U || !sameChannel);
 		List<MusicNote> harmonyNotes = new List<MusicNote>();
-		List<ValueTuple<MusicNote, uint>> melodyNotes = (UnityEngine.Random.value < 0.333f ? melody.MergeNotes() : (UnityEngine.Random.value < 0.5f ? melody.SplitNotes() : melody)).NotesOrdered(0U); // TODO: more strategic splitting/merging (both w/i same block)?
+		List<ValueTuple<MusicNote, uint>> melodyNotes = (UnityEngine.Random.value < 0.333f ? melody.MergeNotes(noteLengthWeights) : (UnityEngine.Random.value < 0.5f ? melody.SplitNotes(noteLengthWeights) : melody)).NotesOrdered(0U); // TODO: more strategic splitting/merging (both w/i same block)?
 		uint endTimePrev = 0U;
 		foreach (ValueTuple<MusicNote, uint> noteTime in melodyNotes)
 		{
@@ -46,9 +46,9 @@ public class MusicBlockHarmony : MusicBlock
 
 	public override List<MidiEvent> ToMidiEvents(uint startSixtyFourths, uint rootKey, MusicScale scale, uint samplesPerSixtyFourth) => CombineFromChildren(block => block.ToMidiEvents(startSixtyFourths, rootKey, scale, samplesPerSixtyFourth), (a, b) => Enumerable.Concat(a, b).ToList(), list => list.Sort((a, b) => a.deltaTime.CompareTo(b.deltaTime)));
 
-	public override MusicBlock SplitNotes() => new MusicBlockHarmony(m_children.Select(block => block.SplitNotes()).ToArray());
+	public override MusicBlock SplitNotes(float[] noteLengthWeights) => new MusicBlockHarmony(m_children.Select(block => block.SplitNotes(noteLengthWeights)).ToArray());
 
-	public override MusicBlock MergeNotes() => new MusicBlockHarmony(m_children.Select(block => block.MergeNotes()).ToArray());
+	public override MusicBlock MergeNotes(float[] noteLengthWeights) => new MusicBlockHarmony(m_children.Select(block => block.MergeNotes(noteLengthWeights)).ToArray());
 
 
 	private MusicBlockHarmony(MusicBlock[] children) => m_children = children;

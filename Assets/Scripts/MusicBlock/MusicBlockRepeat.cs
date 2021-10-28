@@ -45,9 +45,9 @@ public class MusicBlockRepeat : MusicBlock
 		});
 	}
 
-	public override MusicBlock SplitNotes() => new MusicBlockRepeat(m_children.Select(block => block.SplitNotes()).ToArray(), m_schedule);
+	public override MusicBlock SplitNotes(float[] noteLengthWeights) => new MusicBlockRepeat(m_children.Select(block => block.SplitNotes(noteLengthWeights)).ToArray(), m_schedule);
 
-	public override MusicBlock MergeNotes() => new MusicBlockRepeat(m_children.Select(block => block.MergeNotes()).ToArray(), m_schedule);
+	public override MusicBlock MergeNotes(float[] noteLengthWeights) => new MusicBlockRepeat(m_children.Select(block => block.MergeNotes(noteLengthWeights)).ToArray(), m_schedule);
 
 
 	private List<T> CombineViaSchedule<T>(Func<MusicBlock, List<T>> blockFunc)

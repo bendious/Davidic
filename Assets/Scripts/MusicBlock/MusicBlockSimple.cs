@@ -2,6 +2,7 @@ using CSharpSynth.Midi;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 
@@ -42,27 +43,31 @@ public class MusicBlockSimple : MusicBlock
 		});
 	}
 
-	public override MusicBlock SplitNotes() => new MusicBlockSimple(m_blocks.Select(block => block.SplitNotes()).ToArray());
+	public override MusicBlock SplitNotes(float[] noteLengthWeights) => new MusicBlockSimple(m_blocks.Select(block => block.SplitNotes(noteLengthWeights)).ToArray());
 
-	public override MusicBlock MergeNotes()
+	public override MusicBlock MergeNotes(float[] noteLengthWeights)
 	{
-		if (UnityEngine.Random.value < 0.5f/*TODO?*/)
-		{
-			return new MusicBlockSimple(m_blocks.Select(block => block.MergeNotes()).ToArray());
-		}
+		Assert.AreEqual(noteLengthWeights.Length, MusicUtility.tonesPerOctave);
 
 		List<MusicBlock> manualBlocks = new List<MusicBlock>();
 		for (int i = 0, n = m_blocks.Length; i < n; ++i)
 		{
+			MusicBlock block_cur = m_blocks[i];
+			if (UnityEngine.Random.value < 0.5f/*TODO?*/)
+			{
+				manualBlocks.Add(block_cur);
+				continue;
+			}
 			uint sixtyFourthsMerged = 0U;
 			int j, m;
-			int mergeCountMax = UnityEngine.Random.Range(1, 5); // TODO: restrict to / prefer powers of two?
-			float[] firstChord = m_blocks[i].AsNote(uint.MaxValue).m_chord;
+			int doublingCountMax = Mathf.RoundToInt(Mathf.Log(MusicUtility.sixtyFourthsPerMeasure / block_cur.SixtyFourthsTotal(), 2.0f));
+			int mergeCountMax = 1 << Utility.RandomWeighted(Enumerable.Range(1, doublingCountMax).ToArray(), new ArraySegment<float>(noteLengthWeights, noteLengthWeights.Length - doublingCountMax, doublingCountMax).ToArray());
+			float[] firstChord = block_cur.AsNote(uint.MaxValue).m_chord;
 			for (j = i, m = Math.Min(i + mergeCountMax, n); j < m && sixtyFourthsMerged < MusicUtility.sixtyFourthsPerMeasure && firstChord == m_blocks[j].AsNote(uint.MaxValue).m_chord; ++j)
 			{
 				sixtyFourthsMerged += m_blocks[j].SixtyFourthsTotal();
 			}
-			manualBlocks.Add(m_blocks[i].AsNote(sixtyFourthsMerged));
+			manualBlocks.Add(block_cur.AsNote(sixtyFourthsMerged));
 			i = j - 1;
 		}
 		return new MusicBlockSimple(manualBlocks.ToArray());
