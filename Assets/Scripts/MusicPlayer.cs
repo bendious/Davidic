@@ -12,13 +12,13 @@ public class MusicPlayer
 	public uint m_maxPolyphony = 40U;
 
 	public uint m_tempo;
-	public bool m_scaleRegen;
+	public bool m_scaleReuse;
 	public uint m_rootNoteIndex;
 	public uint m_scaleIndex;
 	public bool[] m_instrumentToggles;
-	public bool m_chordRegen;
+	public bool m_chordReuse;
 	public ChordProgression m_chords;
-	public bool m_rhythmRegen;
+	public bool m_rhythmReuse;
 	public MusicRhythm m_rhythm;
 	public float[] m_noteLengthWeights;
 	public uint m_harmonyCount;
@@ -68,22 +68,22 @@ public class MusicPlayer
 		m_instrumentIndices = instrumentList.Distinct().ToArray();
 
 		// regen any random elements
-		if (m_scaleRegen)
+		if (!m_scaleReuse)
 		{
-			m_rootNoteIndex = (uint)UnityEngine.Random.Range(0, 8);
+			m_rootNoteIndex = (uint)UnityEngine.Random.Range(0, (int)MusicUtility.tonesPerOctave);
 			m_scaleIndex = (uint)UnityEngine.Random.Range(0, MusicUtility.scales.Length);
 		}
-		if (m_chordRegen || m_chords.m_progression.Length <= 0)
+		if (!m_chordReuse || m_chords.m_progression.Length <= 0)
 		{
 			m_chords = isScale ? new ChordProgression(new float[][] { MusicUtility.chordI, MusicUtility.chordII, MusicUtility.chordIII, MusicUtility.chordIV, MusicUtility.chordV, MusicUtility.chordVI, MusicUtility.chordVII, MusicUtility.chordI.Select(index => index + MusicUtility.tonesPerOctave).ToArray() }) : MusicUtility.chordProgressions[UnityEngine.Random.Range(0, MusicUtility.chordProgressions.Length)];
 		}
-		if (m_rhythmRegen || m_rhythm.m_lengthsSixtyFourths.Length <= 0)
+		if (!m_rhythmReuse || m_rhythm.m_lengthsSixtyFourths.Length <= 0)
 		{
 			m_rhythm = isScale ? new MusicRhythm(new uint[] { MusicUtility.sixtyFourthsPerBeat / 2U }, new float[] { 0.0f }) : MusicRhythm.Random(m_chords, m_noteLengthWeights);
 		}
 
 		// create sequencer
-		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, isScale, (uint)m_rootNoteIndex, (uint)m_scaleIndex, m_instrumentIndices, m_tempo, m_noteLengthWeights, m_harmonyCount, m_chords, m_rhythm);
+		m_musicSequencer = new MusicSequencer(m_musicStreamSynthesizer, isScale, m_rootNoteIndex, m_scaleIndex, m_instrumentIndices, m_tempo, m_noteLengthWeights, m_harmonyCount, m_chords, m_rhythm);
 	}
 
 	public void Display(string elementIdChords, string elementIdRhythm, string elementIdMain)
@@ -103,7 +103,7 @@ public class MusicPlayer
 			return;
 		}
 		source.volume = m_volume;
-		source.clip = AudioClip.Create("Generated Clip", (int)m_musicSequencer.LengthSamples, m_stereo ? 2 : 1, (int)m_samplesPerSecond, false, OnAudioRead, OnAudioSetPosition);
+		source.clip = AudioClip.Create("Generated Clip", (int)m_musicSequencer.LengthSamples, m_stereo ? 2 : 1, (int)m_samplesPerSecond, true, OnAudioRead, OnAudioSetPosition);
 		source.Play();
 	}
 

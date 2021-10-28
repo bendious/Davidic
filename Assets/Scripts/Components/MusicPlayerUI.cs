@@ -12,13 +12,13 @@ public class MusicPlayerUI : MonoBehaviour
 	public uint m_maxPolyphony = 40U;
 
 	public InputField m_tempoField;
-	public Toggle m_scaleRegenToggle;
+	public Toggle m_scaleReuseToggle;
 	public Dropdown m_rootNoteDropdown;
 	public Dropdown m_scaleDropdown;
 	public ScrollRect m_instrumentScrollview;
-	public Toggle m_chordRegenToggle;
+	public Toggle m_chordReuseToggle;
 	public InputField m_chordField;
-	public Toggle m_rhythmRegenToggle;
+	public Toggle m_rhythmReuseToggle;
 	public InputField m_rhythmField;
 	public InputField[] m_noteLengthFields;
 	public InputField m_harmonyCountField;
@@ -75,13 +75,13 @@ public class MusicPlayerUI : MonoBehaviour
 		m_player.m_stereo = m_stereo;
 		m_player.m_maxPolyphony = m_maxPolyphony;
 		m_player.m_tempo = uint.Parse(m_tempoField.text);
-		m_player.m_scaleRegen = m_scaleRegenToggle.isOn;
+		m_player.m_scaleReuse = m_scaleReuseToggle.isOn;
 		m_player.m_rootNoteIndex = (uint)m_rootNoteDropdown.value;
 		m_player.m_scaleIndex = (uint)m_scaleDropdown.value;
 		m_player.m_instrumentToggles = m_instrumentScrollview.content.GetComponentsInChildren<Toggle>().Select(toggle => toggle.isOn).ToArray();
-		m_player.m_chordRegen = m_chordRegenToggle.isOn;
+		m_player.m_chordReuse = m_chordReuseToggle.isOn;
 		m_player.m_chords = new ChordProgression(chordList);
-		m_player.m_rhythmRegen = m_rhythmRegenToggle.isOn;
+		m_player.m_rhythmReuse = m_rhythmReuseToggle.isOn;
 		m_player.m_rhythm = new MusicRhythm(rhythmLengths, rhythmChords);
 		m_player.m_noteLengthWeights = m_noteLengthFields.Select(field => float.Parse(field.text)).ToArray();
 		m_player.m_harmonyCount = uint.Parse(m_harmonyCountField.text);
