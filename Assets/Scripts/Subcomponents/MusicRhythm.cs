@@ -59,12 +59,14 @@ public class MusicRhythm
 		return notes;
 	}
 
-	public void Display(MusicScale scale, string elementId)
+	private readonly float[] indexZero = { 0 };
+
+	public void Display(string elementId)
 	{
 		int noteCount = m_lengthsSixtyFourths.Length;
+		MusicNote[] notes = m_chordIndices.Zip(m_lengthsSixtyFourths, (idx, length) => new MusicNote(indexZero, length, 1.0f, new float[] { idx }, 0U)).ToArray();
 		uint[] times = Enumerable.Range(0, noteCount).Select(i => i == 0 ? 0U : new ArraySegment<uint>(m_lengthsSixtyFourths, 0, i).Aggregate((a, b) => a + b)).ToArray();
-		uint[] keys = m_chordIndices.Select(index => MusicUtility.midiMiddleCKey + (uint)MusicUtility.TonesToSemitones(index, scale)).ToArray();
 
-		MusicDisplay.Update(elementId, "Rhythm:", null, scale, times, keys, m_lengthsSixtyFourths, Enumerable.Repeat(0U, noteCount).ToArray(), 0U); // NOTE that the bpm of 0 tells the update to use chord progression special formatting
+		MusicDisplay.Update(elementId, "Rhythm:", null, MusicUtility.majorScale, MusicUtility.midiMiddleCKey, 0U, notes, times); // NOTE that the bpm of 0 tells the update to use chord progression special formatting
 	}
 }

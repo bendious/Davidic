@@ -139,8 +139,8 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 	public void Display(string elementIdChords, string elementIdRhythm, string elementIdMain, string[] instrumentNames, uint bpm)
 	{
-		m_chordProgression.Display(m_scale, elementIdChords);
-		m_rhythm.Display(m_scale, elementIdRhythm);
+		m_chordProgression.Display(elementIdChords);
+		m_rhythm.Display(elementIdRhythm);
 		m_musicBlock.Display(m_rootKey, m_scale, elementIdMain, instrumentNames, bpm);
 	}
 }
