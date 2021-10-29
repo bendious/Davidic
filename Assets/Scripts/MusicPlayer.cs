@@ -43,9 +43,9 @@ public class MusicPlayer
 		m_musicStreamSynthesizer.LoadBank(m_bankFilePath);
 	}
 
-    public string[] InstrumentNames() => m_musicStreamSynthesizer.SoundBank.getInstruments(false/*?*/).Where(instrument => instrument != null).Select(instrument => instrument.Name).ToArray();
+	public string[] InstrumentNames() => m_musicStreamSynthesizer.SoundBank.getInstruments(false).Where(instrument => instrument != null).Select(instrument => instrument.Name).ToArray();
 
-    public void Generate(bool isScale)
+	public void Generate(bool isScale)
 	{
 		// choose instrument
 		List<int> candidateIndices = new List<int>();
@@ -90,7 +90,7 @@ public class MusicPlayer
 	{
 		if (m_musicSequencer != null)
 		{
-			string[] instrumentNames = m_instrumentIndices.Select(index => m_musicStreamSynthesizer.SoundBank.getInstrument((int)index, false/*?*/).Name).ToArray();
+			string[] instrumentNames = m_instrumentIndices.Select(index => m_musicStreamSynthesizer.SoundBank.getInstrument((int)index, false).Name).ToArray();
 			m_musicSequencer.Display(elementIdChords, elementIdRhythm, elementIdMain, instrumentNames, m_tempo);
 		}
 	}
@@ -105,6 +105,13 @@ public class MusicPlayer
 		source.volume = m_volume;
 		source.clip = AudioClip.Create("Generated Clip", (int)m_musicSequencer.LengthSamples, m_stereo ? 2 : 1, (int)m_samplesPerSecond, true, OnAudioRead, OnAudioSetPosition);
 		source.Play();
+	}
+
+	public void Export(string filepath)
+	{
+		Assert.IsNotNull(m_musicSequencer);
+		string[] instrumentNames = m_instrumentIndices.Select(index => m_musicStreamSynthesizer.SoundBank.getInstrument((int)index, false).Name).ToArray();
+		m_musicSequencer.Export(filepath, instrumentNames, m_tempo);
 	}
 
 

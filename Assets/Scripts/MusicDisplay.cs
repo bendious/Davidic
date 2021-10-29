@@ -34,7 +34,7 @@ public static class MusicDisplay
 	public static void Update(string elementId, string title, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times)
 	{
 		string[] instrumentNamesSafe = (instrumentNames is null) ? new string[] { "" } : instrumentNames;
-		string xmlStr = ToXml(title, instrumentNamesSafe, scale, rootKey, bpm, notes, times);
+		string xmlStr = ToXml(title, instrumentNamesSafe, scale, rootKey, bpm, notes, times, "\\n"); // NOTE the escaped newlines since the string will be passed to Javascript manually in Debug
 
 		UpdateInternal(elementId, bpm == 0 ? "compacttight" : "compact", xmlStr);
 	}
@@ -52,6 +52,17 @@ public static class MusicDisplay
 #endif
 	}
 
+	public static void Export(string filepath, string title, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times)
+	{
+		Assert.IsNotNull(filepath);
+		Assert.AreNotEqual(filepath.Length, 0);
+
+		string[] instrumentNamesSafe = (instrumentNames is null) ? new string[] { "" } : instrumentNames;
+		string xmlStr = ToXml(title, instrumentNamesSafe, scale, rootKey, bpm, notes, times, "\n");
+
+		File.WriteAllText(filepath, xmlStr);
+	}
+
 
 	static readonly Dictionary<uint, ValueTuple<string, string>> NoteTypesByLength = new Dictionary<uint, ValueTuple<string, string>>();
 
@@ -63,7 +74,7 @@ public static class MusicDisplay
 		public List<string> m_ties;
 	}
 
-	private static string ToXml(string title, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times)
+	private static string ToXml(string title, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times, string newline)
 	{
 		Assert.IsTrue(notes.Length > 0);
 		Assert.AreEqual(notes.Length, times.Length);
@@ -159,24 +170,24 @@ public static class MusicDisplay
 
 		// MusicXML header
 		// TODO: use XmlWriter for cleaner generation?
-		string xmlStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\n<!DOCTYPE score-partwise PUBLIC \"-//Recordare//DTD MusicXML 2.0 Partwise//EN\"\\n\t\"http://www.musicxml.org/dtds/partwise.dtd\">\\n<score-partwise version=\"2.0\">\\n\t<part-list>";
+		string xmlStr = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + newline + "<!DOCTYPE score-partwise PUBLIC \"-//Recordare//DTD MusicXML 2.0 Partwise//EN\"" + newline + "\t\"http://www.musicxml.org/dtds/partwise.dtd\">" + newline + "<score-partwise version=\"2.0\">" + newline + "\t<part-list>";
 		for (int channelIdx = 0; channelIdx < instrumentNames.Length; ++channelIdx)
 		{
 			string instrumentNameStr = instrumentNames[channelIdx];
-			xmlStr += "\\n\t\t<score-part id=\"" + instrumentNameStr + "\">\\n\t\t\t<part-name>" + instrumentNameStr + "</part-name>\\n\t\t\t<midi-instrument id=\"" + instrumentNameStr + "I1\">\\n\t\t\t\t<midi-channel>" + channelIdx + "</midi-channel>\\n\t\t\t\t<midi-program>0</midi-program>\\n\t\t\t</midi-instrument>\\n\t\t</score-part>";
+			xmlStr += newline + "\t\t<score-part id=\"" + instrumentNameStr + "\">" + newline + "\t\t\t<part-name>" + instrumentNameStr + "</part-name>" + newline + "\t\t\t<midi-instrument id=\"" + instrumentNameStr + "I1\">" + newline + "\t\t\t\t<midi-channel>" + channelIdx + "</midi-channel>" + newline + "\t\t\t\t<midi-program>0</midi-program>" + newline + "\t\t\t</midi-instrument>" + newline + "\t\t</score-part>";
 		}
-		xmlStr += "\\n\t</part-list>";
+		xmlStr += newline + "\t</part-list>";
 
-		string perNoteStr = isUntimed ? "\t\t\t\t<notehead>x</notehead>\\n" : "";
+		string perNoteStr = isUntimed ? "\t\t\t\t<notehead>x</notehead>" + newline : "";
 
 		for (int channelIdx = 0; channelIdx < instrumentNames.Length; ++channelIdx)
 		{
 			List<MusicNoteInfo> noteList = noteObjects[channelIdx];
 
 			string instrumentNameStr = instrumentNames[channelIdx];
-			xmlStr += "\\n\t<part id=\"" + instrumentNameStr + "\">"
-				+ (isUntimed ? "\\n\t\t<measure>\\n\t\t\t<attributes>\\n\t\t\t\t<key print-object=\"no\"></key>\\n\t\t\t\t<time print-object=\"no\"></time>\\n\t\t\t\t<clef>\\n\t\t\t\t\t<sign>percussion</sign>\\n\t\t\t\t\t<staff-lines>5</staff-lines>\\n\t\t\t\t</clef>\\n\t\t\t</attributes>\\n\t\t\t<direction placement=\"above\">\\n\t\t\t\t<direction-type>\\n\t\t\t\t\t<words>" + title + "</words>\\n\t\t\t\t</direction-type>\\n\t\t\t</direction>"
-				: "\\n\t\t<measure>\\n\t\t\t<attributes>\\n\t\t\t\t<key>\\n\t\t\t\t\t<fifths>" + scale.m_fifths + "</fifths>\\n\t\t\t\t\t<mode>" + scale.m_mode + "</mode>\\n\t\t\t\t</key>\\n\t\t\t\t<time>\\n\t\t\t\t\t<beats>4</beats>\\n\t\t\t\t\t<beat-type>4</beat-type>\\n\t\t\t\t</time>\\n\t\t\t\t<clef number=\"1\">\\n\t\t\t\t\t<sign>G</sign>\\n\t\t\t\t\t<line>2</line>\\n\t\t\t\t</clef>\\n\t\t\t\t<divisions>16</divisions>\\n\t\t\t</attributes>\\n\t\t\t<direction placement=\"above\">\\n\t\t\t\t<direction-type>\\n\t\t\t\t\t<metronome>\\n\t\t\t\t\t\t<beat-unit>quarter</beat-unit>\\n\t\t\t\t\t\t<per-minute>" + bpm + "</per-minute>\\n\t\t\t\t\t</metronome>\\n\t\t\t\t</direction-type>\\n\t\t\t\t<sound tempo=\"" + bpm + "\"/>\\n\t\t\t</direction>"); // TODO: base divisions on time signature?
+			xmlStr += newline + "\t<part id=\"" + instrumentNameStr + "\">"
+				+ (isUntimed ? newline + "\t\t<measure>" + newline + "\t\t\t<attributes>" + newline + "\t\t\t\t<key print-object=\"no\"></key>" + newline + "\t\t\t\t<time print-object=\"no\"></time>" + newline + "\t\t\t\t<clef>" + newline + "\t\t\t\t\t<sign>percussion</sign>" + newline + "\t\t\t\t\t<staff-lines>5</staff-lines>" + newline + "\t\t\t\t</clef>" + newline + "\t\t\t</attributes>" + newline + "\t\t\t<direction placement=\"above\">" + newline + "\t\t\t\t<direction-type>" + newline + "\t\t\t\t\t<words>" + title + "</words>" + newline + "\t\t\t\t</direction-type>" + newline + "\t\t\t</direction>"
+				: newline + "\t\t<measure>" + newline + "\t\t\t<attributes>" + newline + "\t\t\t\t<key>" + newline + "\t\t\t\t\t<fifths>" + scale.m_fifths + "</fifths>" + newline + "\t\t\t\t\t<mode>" + scale.m_mode + "</mode>" + newline + "\t\t\t\t</key>" + newline + "\t\t\t\t<time>" + newline + "\t\t\t\t\t<beats>4</beats>" + newline + "\t\t\t\t\t<beat-type>4</beat-type>" + newline + "\t\t\t\t</time>" + newline + "\t\t\t\t<clef number=\"1\">" + newline + "\t\t\t\t\t<sign>G</sign>" + newline + "\t\t\t\t\t<line>2</line>" + newline + "\t\t\t\t</clef>" + newline + "\t\t\t\t<divisions>16</divisions>" + newline + "\t\t\t</attributes>" + newline + "\t\t\t<direction placement=\"above\">" + newline + "\t\t\t\t<direction-type>" + newline + "\t\t\t\t\t<metronome>" + newline + "\t\t\t\t\t\t<beat-unit>quarter</beat-unit>" + newline + "\t\t\t\t\t\t<per-minute>" + bpm + "</per-minute>" + newline + "\t\t\t\t\t</metronome>" + newline + "\t\t\t\t</direction-type>" + newline + "\t\t\t\t<sound tempo=\"" + bpm + "\"/>" + newline + "\t\t\t</direction>"); // TODO: base divisions on time signature?
 
 			// accumulators / inter-note memory
 			int timeValPrev = -1;
@@ -193,7 +204,7 @@ public static class MusicDisplay
 				{
 					// overlap w/ previous note(s)
 					overlapAmount = (int)(notePrevEnd - noteObj.m_time);
-					xmlStr += "\\n\t\t\t<backup>\\n\t\t\t\t<duration>" + overlapAmount + "</duration>\\n\t\t\t</backup>";
+					xmlStr += newline + "\t\t\t<backup>" + newline + "\t\t\t\t<duration>" + overlapAmount + "</duration>" + newline + "\t\t\t</backup>";
 				}
 				else if (noteObj.m_time > notePrevEnd)
 				{
@@ -202,14 +213,14 @@ public static class MusicDisplay
 					ValueTuple<string, string> typeAndDotStr = NoteTypesByLength.ContainsKey(noteObj.m_length) ? NoteTypesByLength[noteObj.m_length] : new ValueTuple<string, string>("ERROR", "");
 					string typeStr = typeAndDotStr.Item1;
 					string dotStr = typeAndDotStr.Item2;
-					xmlStr += "\\n\t\t\t<note>\\n\t\t\t\t<rest/>\\n\t\t\t\t<duration>" + (noteObj.m_time - notePrevEnd) + "</duration>\\n\t\t\t\t<voice>1</voice>\\n\t\t\t\t<type>" + typeStr + "</type>" + dotStr + "\\n\t\t\t\t</note>";
+					xmlStr += newline + "\t\t\t<note>" + newline + "\t\t\t\t<rest/>" + newline + "\t\t\t\t<duration>" + (noteObj.m_time - notePrevEnd) + "</duration>" + newline + "\t\t\t\t<voice>1</voice>" + newline + "\t\t\t\t<type>" + typeStr + "</type>" + dotStr + newline + "\t\t\t\t</note>";
 				}
 
 				// add barline if appropriate
 				bool newMeasure = overlapAmount <= 0 && noteObj.m_time > 0 && noteObj.m_time % sixtyFourthsPerMeasure == 0;
 				if (newMeasure)
 				{
-					xmlStr += "\\n\t\t</measure>\\n\t\t<measure>";
+					xmlStr += newline + "\t\t</measure>" + newline + "\t\t<measure>";
 				}
 
 				int keyIdx = 0;
@@ -237,19 +248,19 @@ public static class MusicDisplay
 					string accidentalStr = (semitoneOffset > 0 ? "sharp" : semitoneOffset < 0 ? "flat" : "");
 
 					// add to XML
-					xmlStr += "\\n\t\t\t<note>\\n\t\t\t\t" + (keyIdx > 0 ? "<chord/>" : "") +
-					"<" + pitchTag + ">\\n\t\t\t\t\t<" + pitchPrefix + "step>" + noteLetter + "</" + pitchPrefix + "step>\\n\t\t\t\t\t<alter>" + semitoneOffset + "</alter>\\n\t\t\t\t\t<" + pitchPrefix + "octave>" + noteOctave + "</" + pitchPrefix + "octave>\\n\t\t\t\t</" + pitchTag + ">\\n\t\t\t\t<duration>" + noteObj.m_length + "</duration>\\n\t\t\t\t<voice>" + (overlapAmount > 0 ? 2 : 1) + "</voice>\\n\t\t\t\t<type>" + typeStr + "</type>" + dotStr + "\\n"
-					+ (beamStr == "" ? "" : "\t\t\t\t<beam number=\"1\">" + beamStr + "</beam>\\n")
-					+ (accidentalStr == "" ? "" : "\t\t\t\t<accidental>" + accidentalStr + "</accidental>\\n")
+					xmlStr += newline + "\t\t\t<note>" + newline + "\t\t\t\t" + (keyIdx > 0 ? "<chord/>" : "") +
+					"<" + pitchTag + ">" + newline + "\t\t\t\t\t<" + pitchPrefix + "step>" + noteLetter + "</" + pitchPrefix + "step>" + newline + "\t\t\t\t\t<alter>" + semitoneOffset + "</alter>" + newline + "\t\t\t\t\t<" + pitchPrefix + "octave>" + noteOctave + "</" + pitchPrefix + "octave>" + newline + "\t\t\t\t</" + pitchTag + ">" + newline + "\t\t\t\t<duration>" + noteObj.m_length + "</duration>" + newline + "\t\t\t\t<voice>" + (overlapAmount > 0 ? 2 : 1) + "</voice>" + newline + "\t\t\t\t<type>" + typeStr + "</type>" + dotStr + newline
+					+ (beamStr == "" ? "" : "\t\t\t\t<beam number=\"1\">" + beamStr + "</beam>" + newline)
+					+ (accidentalStr == "" ? "" : "\t\t\t\t<accidental>" + accidentalStr + "</accidental>" + newline)
 					+ perNoteStr;
 					if (noteObj.m_ties.Count > 0)
 					{
-						xmlStr += "\t\t\t\t<notations>\\n";
+						xmlStr += "\t\t\t\t<notations>" + newline;
 						foreach (string tieTypeStr in noteObj.m_ties)
 						{
-							xmlStr += "\t\t\t\t\t<tied type=\"" + tieTypeStr + "\"/>\\n";
+							xmlStr += "\t\t\t\t\t<tied type=\"" + tieTypeStr + "\"/>" + newline;
 						}
-						xmlStr += "\t\t\t\t</notations>\\n";
+						xmlStr += "\t\t\t\t</notations>" + newline;
 					}
 					xmlStr += "\t\t\t</note>";
 					// TODO: <{p/mp/mf/f}/>?
@@ -264,13 +275,13 @@ public static class MusicDisplay
 
 			if (!isUntimed)
 			{
-				xmlStr += "\\n\t\t\t<barline location=\"right\">\\n\t\t\t\t<bar-style>light-heavy</bar-style>\\n\t\t\t</barline>";
+				xmlStr += newline + "\t\t\t<barline location=\"right\">" + newline + "\t\t\t\t<bar-style>light-heavy</bar-style>" + newline + "\t\t\t</barline>";
 			}
-			xmlStr += "\\n\t\t</measure>\\n\t</part>";
+			xmlStr += newline + "\t\t</measure>" + newline + "\t</part>";
 		}
 
 		// footer
-		xmlStr += "\\n</score-partwise>";
+		xmlStr += newline + "</score-partwise>";
 
 		return xmlStr;
 	}

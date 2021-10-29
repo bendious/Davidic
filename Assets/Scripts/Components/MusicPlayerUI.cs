@@ -108,4 +108,13 @@ public class MusicPlayerUI : MonoBehaviour
 	{
 		m_player.Play(GetComponent<AudioSource>());
 	}
+
+	public void Export()
+	{
+		string filepath = UnityEditor.EditorUtility.SaveFilePanel("Export to XML", "", "DavidicOutput.xml", "xml");
+		if (filepath.Length > 0)
+		{
+			m_player.Export(filepath);
+		}
+    }
 }

@@ -35,7 +35,6 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	private int m_eventIndex = 0;
 
 
-	//--Public Methods
 	public MusicSequencer(StreamSynthesizer synth, bool isScale, uint rootKeyIndex, uint scaleIndex, uint[] instrumentIndices, uint bpm, float[] noteLengthWeights, uint harmoniesMax, ChordProgression chords, MusicRhythm rhythm)
 		: base(synth)
 	{
@@ -142,5 +141,10 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		m_chordProgression.Display(elementIdChords);
 		m_rhythm.Display(elementIdRhythm);
 		m_musicBlock.Display(m_rootKey, m_scale, elementIdMain, instrumentNames, bpm);
+	}
+
+	public void Export(string filepath, string[] instrumentNames, uint bpm)
+    {
+		m_musicBlock.Export(filepath, m_rootKey, m_scale, instrumentNames, bpm);
 	}
 }
