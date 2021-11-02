@@ -34,7 +34,13 @@ public static class MusicDisplay
 	public static void Update(string elementId, string title, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times)
 	{
 		string[] instrumentNamesSafe = (instrumentNames is null) ? new string[] { "" } : instrumentNames;
-		string xmlStr = ToXml(title, instrumentNamesSafe, scale, rootKey, bpm, notes, times, "\\n"); // NOTE the escaped newlines since the string will be passed to Javascript manually in Debug
+		string xmlStr = ToXml(title, instrumentNamesSafe, scale, rootKey, bpm, notes, times,
+#if UNITY_EDITOR
+			"\\n" // NOTE the escaped newlines since the string will be passed to Javascript manually
+#else
+			"\n"
+#endif
+			);
 
 		UpdateInternal(elementId, bpm == 0 ? "compacttight" : "compact", xmlStr);
 	}

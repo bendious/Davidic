@@ -3,6 +3,7 @@ using CSharpSynth.Synthesis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Assertions;
 
 
 public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
@@ -29,7 +30,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	private readonly MusicBlock m_musicBlock;
 	public readonly ChordProgression m_chordProgression;
 	public readonly MusicRhythm m_rhythm;
-	private readonly List<MidiEvent> m_events;
+	private readonly MidiEvent[] m_events;
 
 	private int m_sampleTime = 0;
 	private int m_eventIndex = 0;
@@ -39,7 +40,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		: base(synth)
 	{
 		// initialize
-		m_events = new List<MidiEvent>();
+		List<MidiEvent> eventList = new List<MidiEvent>();
 		synth.NoteOffAll(true); // prevent orphaned notes playing forever
 		m_samplesPerSixtyFourth = m_samplesPerSecond * MusicUtility.secondsPerMinute / bpm / MusicUtility.sixtyFourthsPerBeat;
 
@@ -61,7 +62,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 				parameter1 = (byte)instrumentIndex,
 				channel = channelIdx++,
 			};
-			m_events.Add(eventSetInstrument);
+			eventList.Add(eventSetInstrument);
 		}
 
 		// sequence into notes
@@ -87,7 +88,9 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		{
 			m_musicBlock = new MusicBlockHarmony(m_musicBlock, harmoniesMax, channelItr, noteLengthWeights);
 		}
-		m_events.AddRange(m_musicBlock.ToMidiEvents(0U, m_rootKey, m_scale, m_samplesPerSixtyFourth));
+		eventList.AddRange(m_musicBlock.ToMidiEvents(0U, m_rootKey, m_scale, m_samplesPerSixtyFourth));
+
+		m_events = eventList.ToArray();
 	}
 
 	public override bool isPlaying
@@ -105,7 +108,7 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 			m_sampleTime = 0;
 			return null;
 		}
-		while (m_eventIndex < m_events.Count && m_events[m_eventIndex].deltaTime < (m_sampleTime + frame))
+		while (m_eventIndex < m_events.Length && m_events[m_eventIndex].deltaTime < (m_sampleTime + frame))
 		{
 			seqEvt.Events.Add(m_events[m_eventIndex]);
 			++m_eventIndex;
@@ -121,13 +124,16 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 	public override void SetTime(TimeSpan time)
 	{
-		// TODO: handle time changes beyond just reset-to-start?
-		if (time.Ticks != 0)
+		Assert.IsTrue(time.Ticks >= 0 && m_samplesPerSecond > 0U);
+		m_sampleTime = (int)Math.Truncate(time.TotalSeconds * m_samplesPerSecond);
+		Assert.IsTrue((time.Ticks > 0) == (m_sampleTime > 0U));
+		m_eventIndex = Array.IndexOf(m_events, Array.Find(m_events, evt => evt.deltaTime >= m_sampleTime));
+		if (m_eventIndex < 0)
 		{
-			return;
+			m_eventIndex = m_events.Count();
 		}
-		m_sampleTime = (int)time.Ticks;
-		m_eventIndex = 0;
+		Assert.IsTrue((time.Ticks > 0) == (m_eventIndex > 0U));
+		UnityEngine.Debug.Log("SetTime(): time " + time + ", sampletime " + m_sampleTime + ", event " + m_eventIndex);
 		base.SetTime(time);
 	}
 

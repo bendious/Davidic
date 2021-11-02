@@ -1,3 +1,4 @@
+using SFB;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -111,7 +112,7 @@ public class MusicPlayerUI : MonoBehaviour
 
 	public void Export()
 	{
-		string filepath = UnityEditor.EditorUtility.SaveFilePanel("Export to XML", "", "DavidicOutput.xml", "xml");
+		string filepath = StandaloneFileBrowser.SaveFilePanel("Export to XML", "", "DavidicOutput.xml", "xml");
 		if (filepath.Length > 0)
 		{
 			m_player.Export(filepath);

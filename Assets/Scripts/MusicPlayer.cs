@@ -58,7 +58,7 @@ public class MusicPlayer
 		}
 		if (candidateIndices.Count <= 0)
 		{
-			return;
+			candidateIndices = Enumerable.Range(0, m_instrumentToggles.Length).ToList();
 		}
 		List<uint> instrumentList = new List<uint>();
 		for (uint i = 0U, n = m_instrumentCount; i < n; ++i)
@@ -103,7 +103,7 @@ public class MusicPlayer
 			return;
 		}
 		source.volume = m_volume;
-		source.clip = AudioClip.Create("Generated Clip", (int)m_musicSequencer.LengthSamples, m_stereo ? 2 : 1, (int)m_samplesPerSecond, true, OnAudioRead, OnAudioSetPosition);
+		source.clip = AudioClip.Create("Generated Clip", (int)m_musicSequencer.LengthSamples, m_stereo ? 2 : 1, (int)m_samplesPerSecond, false, OnAudioRead, OnAudioSetPosition); // NOTE that the streaming flag should be set if WebGL ever supports it
 		source.Play();
 	}
 
@@ -121,5 +121,5 @@ public class MusicPlayer
 		// NOTE that we don't increment m_musicSequencer since m_musicStreamSynthesizer takes care of that
 	}
 
-	private void OnAudioSetPosition(int new_position) => m_musicSequencer.SetTime(new System.TimeSpan(new_position));
+	private void OnAudioSetPosition(int new_position) => m_musicSequencer.SetTime(System.TimeSpan.FromSeconds(new_position / (double)m_samplesPerSecond));
 }
