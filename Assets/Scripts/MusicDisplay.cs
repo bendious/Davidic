@@ -58,15 +58,16 @@ public static class MusicDisplay
 #endif
 	}
 
-	public static void Export(string filepath, string title, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times)
+	public static string Export(string filepath, string title, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times)
 	{
-		Assert.IsNotNull(filepath);
-		Assert.AreNotEqual(filepath.Length, 0);
-
 		string[] instrumentNamesSafe = (instrumentNames is null) ? new string[] { "" } : instrumentNames;
 		string xmlStr = ToXml(title, instrumentNamesSafe, scale, rootKey, bpm, notes, times, "\n");
 
-		File.WriteAllText(filepath, xmlStr);
+		if (!string.IsNullOrEmpty(filepath))
+		{
+			File.WriteAllText(filepath, xmlStr);
+		}
+		return xmlStr;
 	}
 
 

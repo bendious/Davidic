@@ -104,14 +104,16 @@ public class MusicPlayer
 		}
 		source.volume = m_volume;
 		source.clip = AudioClip.Create("Generated Clip", (int)m_musicSequencer.LengthSamples, m_stereo ? 2 : 1, (int)m_samplesPerSecond, false, OnAudioRead, OnAudioSetPosition); // NOTE that the streaming flag should be set if WebGL ever supports it
+		source.time = 0.0f;
+		OnAudioSetPosition(0); // needed to ensure WebGL resets audio clip
 		source.Play();
 	}
 
-	public void Export(string filepath)
+	public string Export(string filepath)
 	{
 		Assert.IsNotNull(m_musicSequencer);
 		string[] instrumentNames = m_instrumentIndices.Select(index => m_musicStreamSynthesizer.SoundBank.getInstrument((int)index, false).Name).ToArray();
-		m_musicSequencer.Export(filepath, instrumentNames, m_tempo);
+		return m_musicSequencer.Export(filepath, instrumentNames, m_tempo);
 	}
 
 

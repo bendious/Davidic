@@ -100,14 +100,13 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 
 	public override CSharpSynth.Sequencer.MidiSequencerEvent Process(int frame)
 	{
-		CSharpSynth.Sequencer.MidiSequencerEvent seqEvt = new CSharpSynth.Sequencer.MidiSequencerEvent();
-
-		// stop or loop
 		if (m_sampleTime >= (int)LengthSamples)
 		{
-			m_sampleTime = 0;
 			return null;
 		}
+
+		CSharpSynth.Sequencer.MidiSequencerEvent seqEvt = new CSharpSynth.Sequencer.MidiSequencerEvent();
+
 		while (m_eventIndex < m_events.Length && m_events[m_eventIndex].deltaTime < (m_sampleTime + frame))
 		{
 			seqEvt.Events.Add(m_events[m_eventIndex]);
@@ -125,15 +124,12 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 	public override void SetTime(TimeSpan time)
 	{
 		Assert.IsTrue(time.Ticks >= 0 && m_samplesPerSecond > 0U);
-		m_sampleTime = (int)Math.Truncate(time.TotalSeconds * m_samplesPerSecond);
-		Assert.IsTrue((time.Ticks > 0) == (m_sampleTime > 0U));
-		m_eventIndex = Array.IndexOf(m_events, Array.Find(m_events, evt => evt.deltaTime >= m_sampleTime));
-		if (m_eventIndex < 0)
+		if (time.Ticks > 0) // TODO: handle non-restart set requests?
 		{
-			m_eventIndex = m_events.Count();
+			return;
 		}
-		Assert.IsTrue((time.Ticks > 0) == (m_eventIndex > 0U));
-		UnityEngine.Debug.Log("SetTime(): time " + time + ", sampletime " + m_sampleTime + ", event " + m_eventIndex);
+		m_sampleTime = 0;
+		m_eventIndex = 0;
 		base.SetTime(time);
 	}
 
@@ -149,8 +145,8 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		m_musicBlock.Display(m_rootKey, m_scale, elementIdMain, instrumentNames, bpm);
 	}
 
-	public void Export(string filepath, string[] instrumentNames, uint bpm)
-    {
-		m_musicBlock.Export(filepath, m_rootKey, m_scale, instrumentNames, bpm);
+	public string Export(string filepath, string[] instrumentNames, uint bpm)
+	{
+		return m_musicBlock.Export(filepath, m_rootKey, m_scale, instrumentNames, bpm);
 	}
 }

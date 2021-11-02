@@ -1,4 +1,3 @@
-using SFB;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -110,12 +109,8 @@ public class MusicPlayerUI : MonoBehaviour
 		m_player.Play(GetComponent<AudioSource>());
 	}
 
-	public void Export()
+	public string Export(string filepath)
 	{
-		string filepath = StandaloneFileBrowser.SaveFilePanel("Export to XML", "", "DavidicOutput.xml", "xml");
-		if (filepath.Length > 0)
-		{
-			m_player.Export(filepath);
-		}
+		return m_player.Export(filepath);
     }
 }

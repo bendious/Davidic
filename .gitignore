@@ -36,6 +36,7 @@
 ExportedObj/
 .consulo/
 *.csproj
+*.csproj.*
 *.unityproj
 *.sln
 *.suo
