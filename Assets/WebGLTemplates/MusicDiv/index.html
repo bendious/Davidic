@@ -6,7 +6,7 @@
 	<title>Unity WebGL Player | {{{ PRODUCT_NAME }}}</title>
 	<script src="opensheetmusicdisplay.min.js"></script>
 </head>
-<body style="text-align: center">
+<body style="text-align: left">
 	<canvas id="unity-canvas" width={{{ WIDTH }}} height={{{ HEIGHT }}} style="width: {{{ WIDTH }}}px; height: {{{ HEIGHT }}}px; background: {{{ BACKGROUND_FILENAME ? 'url(\'Build/' + BACKGROUND_FILENAME.replace(/'/g, '%27') + '\') center / cover' : BACKGROUND_COLOR }}}"></canvas>
 	<script src="Build/{{{ LOADER_FILENAME }}}"></script>
 	<script>
@@ -29,8 +29,10 @@
 		});
 	</script>
 
-	<div class="osmd-container" id="osmd-chords"></div>
-	<div class="osmd-container" id="osmd-rhythm"></div>
-	<div class="osmd-container" id="osmd-main"></div>
+	<div style="display:inline-block; *display:inline; width:400px">
+		<div class="osmd-container" id="osmd-chords"></div>
+		<div class="osmd-container" id="osmd-rhythm"></div>
+	</div>
+	<div class="osmd-container" id="osmd-main" style="width:1025px"></div>
 </body>
 </html>
