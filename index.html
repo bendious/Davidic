@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Unity WebGL Player | Davidic</title>
+	<script src="opensheetmusicdisplay.min.js"></script>
+</head>
+<body style="text-align: left">
+	<canvas id="unity-canvas" width=625 height=535 style="width: 625px; height: 535px; background: #231F20"></canvas>
+	<script src="Build/Build.loader.js"></script>
+	<script>
+		createUnityInstance(document.querySelector("#unity-canvas"), {
+			dataUrl: "Build/Build.data",
+			frameworkUrl: "Build/Build.framework.js",
+			codeUrl: "Build/Build.wasm",
+			streamingAssetsUrl: "StreamingAssets",
+			companyName: "Hermitage",
+			productName: "Davidic",
+			productVersion: "1.0",
+			// matchWebGLToCanvasSize: false, // Uncomment this to separately control WebGL canvas render size and DOM element size.
+			// devicePixelRatio: 1, // Uncomment this to override low DPI rendering on high DPI displays.
+		});
+	</script>
+
+	<div style="display:inline-block; *display:inline; width:400px">
+		<div class="osmd-container" id="osmd-chords"></div>
+		<div class="osmd-container" id="osmd-rhythm"></div>
+	</div>
+	<div class="osmd-container" id="osmd-main" style="width:1025px"></div>
+</body>
+</html>
