@@ -27,6 +27,14 @@
 			// matchWebGLToCanvasSize: false, // Uncomment this to separately control WebGL canvas render size and DOM element size.
 			// devicePixelRatio: 1, // Uncomment this to override low DPI rendering on high DPI displays.
 		});
+
+		// TODO: un-comment and convert this to play nice w/ Unity's scrolling elements?
+		// disable Unity's mouse event capturing when scrolling so that we can scroll normally regardless of where the pointer is; see https://medium.com/@tuznev/enable-mouse-scroll-functionality-inside-unity3d-container-on-webgl-8dd4dc6a1784
+		//var canvas = document.getElementById('unity-canvas');
+		//function onScroll() { canvas.style['pointer-events'] = 'none'; }
+		//function onMouse() { canvas.style['pointer-events'] = 'auto'; }
+		//document.addEventListener('wheel', onScroll, false);
+		//document.addEventListener('mousemove', onMouse, false);
 	</script>
 
 	<div style="display:inline-block; *display:inline; width:400px">

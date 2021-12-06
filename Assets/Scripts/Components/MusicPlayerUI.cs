@@ -106,7 +106,8 @@ public class MusicPlayerUI : MonoBehaviour
 
 	public void Play()
 	{
-		m_player.Play(GetComponent<AudioSource>());
+		StopAllCoroutines();
+		StartCoroutine(m_player.Play(GetComponents<AudioSource>()));
 	}
 
 	public string Export(string filepath)
