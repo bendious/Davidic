@@ -100,7 +100,7 @@ public class MusicPlayer
 		}
 	}
 
-	public IEnumerator Play(AudioSource[] sources)
+	public IEnumerator Play(AudioSource[] sources, bool stream)
 	{
 		Assert.IsTrue(sources.Length > 1);
 
@@ -117,7 +117,7 @@ public class MusicPlayer
 		Assert.IsFalse(sources.Any(source => source == null));
 
 		// inter-loop data
-		int perClipSamplesMax = (int)(perClipSecondsMax * m_samplesPerSecond);
+		int perClipSamplesMax = stream ? (int)(perClipSecondsMax * m_samplesPerSecond) : int.MaxValue;
 		int samplesTotal = (int)m_musicSequencer.LengthSamples;
 
 		// iterators

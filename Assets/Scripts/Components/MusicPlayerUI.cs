@@ -24,6 +24,7 @@ public class MusicPlayerUI : MonoBehaviour
 	public InputField m_harmonyCountField;
 	public InputField m_instrumentCountField;
 	public InputField m_volumeField;
+	public Toggle m_audioStreamToggle;
 
 	public string m_bankFilePath = "GM Bank/gm";
 
@@ -107,7 +108,7 @@ public class MusicPlayerUI : MonoBehaviour
 	public void Play()
 	{
 		StopAllCoroutines();
-		StartCoroutine(m_player.Play(GetComponents<AudioSource>()));
+		StartCoroutine(m_player.Play(GetComponents<AudioSource>(), m_audioStreamToggle.isOn));
 	}
 
 	public string Export(string filepath)
