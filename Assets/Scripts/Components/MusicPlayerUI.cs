@@ -111,8 +111,8 @@ public class MusicPlayerUI : MonoBehaviour
 		StartCoroutine(m_player.Play(GetComponents<AudioSource>(), m_audioStreamToggle.isOn));
 	}
 
-	public string Export(string filepath)
+	public string ExportXML(string filepath)
 	{
-		return m_player.Export(filepath);
+		return m_player.ExportXML(filepath);
     }
 }

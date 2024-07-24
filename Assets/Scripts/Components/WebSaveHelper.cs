@@ -18,7 +18,7 @@ public class WebSaveHelper : MonoBehaviour, IPointerDownHandler
     private static extern void DownloadFile(string gameObjectName, string methodName, string filename, byte[] byteArray, int byteArraySize);
 #endif
 
-    // Broser plugin should be called in OnPointerDown.
+    // Browser plugin should be called in OnPointerDown.
     public void OnPointerDown(PointerEventData eventData)
 	{
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -28,7 +28,7 @@ public class WebSaveHelper : MonoBehaviour, IPointerDownHandler
 		var path = StandaloneFileBrowser.SaveFilePanel("Export to XML", "", "DavidicOutput", "xml");
 		if (!string.IsNullOrEmpty(path))
 		{
-			m_musicPlayer.Export(path);
+			m_musicPlayer.ExportXML(path);
 		}
 #endif
 	}

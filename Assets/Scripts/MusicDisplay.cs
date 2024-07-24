@@ -58,7 +58,7 @@ public static class MusicDisplay
 #endif
 	}
 
-	public static string Export(string filepath, string title, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times)
+	public static string ExportXML(string filepath, string title, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times)
 	{
 		string[] instrumentNamesSafe = (instrumentNames is null) ? new string[] { "" } : instrumentNames;
 		string xmlStr = ToXml(title, instrumentNamesSafe, scale, rootKey, bpm, notes, times, "\n");
