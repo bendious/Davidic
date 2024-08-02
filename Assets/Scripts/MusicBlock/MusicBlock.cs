@@ -26,12 +26,12 @@ public abstract class MusicBlock
 		MusicDisplay.Update(elementId, "", instrumentNames, scale, rootKey, bpm, notes, times);
 	}
 
-	public string ExportXML(string filepath, uint rootKey, MusicScale scale, string[] instrumentNames, uint bpm)
+	public byte[] Export(string filepath, bool isMidi, uint rootKey, MusicScale scale, uint[] instrumentIndices, string[] instrumentNames, uint bpm)
 	{
 		List<ValueTuple<MusicNote, uint>> noteTimeSequence = NotesOrdered(0U);
 		MusicNote[] notes = noteTimeSequence.Select(pair => pair.Item1).ToArray();
 		uint[] times = noteTimeSequence.Select(pair => pair.Item2).ToArray();
 
-		return MusicDisplay.ExportXML(filepath, "", instrumentNames, scale, rootKey, bpm, notes, times);
+		return MusicDisplay.Export(filepath, isMidi, "", instrumentIndices, instrumentNames, scale, rootKey, bpm, notes, times);
 	}
 }

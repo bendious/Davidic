@@ -149,11 +149,11 @@ public class MusicPlayer
 		}
 	}
 
-	public string ExportXML(string filepath)
+	public byte[] Export(string filepath, bool isMidi)
 	{
 		Assert.IsNotNull(m_musicSequencer);
 		string[] instrumentNames = m_instrumentIndices.Select(index => m_musicStreamSynthesizer.SoundBank.getInstrument((int)index, false).Name).ToArray();
-		return m_musicSequencer.ExportXML(filepath, instrumentNames, m_tempo);
+		return m_musicSequencer.Export(filepath, isMidi, m_instrumentIndices, instrumentNames, m_tempo);
 	}
 
 

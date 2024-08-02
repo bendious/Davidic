@@ -1,7 +1,12 @@
+using Melanchall.DryWetMidi.Common;
+using Melanchall.DryWetMidi.Core;
+using Melanchall.DryWetMidi.Interaction;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+
 #if !UNITY_EDITOR
 using System.Runtime.InteropServices;
 #endif
@@ -58,16 +63,16 @@ public static class MusicDisplay
 #endif
 	}
 
-	public static string ExportXML(string filepath, string title, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times)
+	public static byte[] Export(string filepath, bool isMidi, string title, uint[] instrumentIndices, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times)
 	{
 		string[] instrumentNamesSafe = (instrumentNames is null) ? new string[] { "" } : instrumentNames;
-		string xmlStr = ToXml(title, instrumentNamesSafe, scale, rootKey, bpm, notes, times, "\n");
+		byte[] outputBytes = isMidi ? ToMidi(instrumentIndices, scale, rootKey, bpm, notes, times, filepath) : Encoding.UTF8.GetBytes(ToXml(title, instrumentNamesSafe, scale, rootKey, bpm, notes, times, "\n"));
 
-		if (!string.IsNullOrEmpty(filepath))
+		if (!string.IsNullOrEmpty(filepath) && outputBytes.Length > 0)
 		{
-			File.WriteAllText(filepath, xmlStr);
+			File.WriteAllBytes(filepath, outputBytes);
 		}
-		return xmlStr;
+		return outputBytes;
 	}
 
 
@@ -81,7 +86,7 @@ public static class MusicDisplay
 		public List<string> m_ties;
 	}
 
-	private static string ToXml(string title, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times, string newline)
+	private static List<List<MusicNoteInfo>> CollateNotes(MusicScale scale, uint rootKey, MusicNote[] notes, uint[] times)
 	{
 		Assert.IsTrue(notes.Length > 0);
 		Assert.AreEqual(notes.Length, times.Length);
@@ -103,7 +108,6 @@ public static class MusicDisplay
 			NoteTypesByLength.Add(64, new ValueTuple<string, string>("whole", ""));
 			NoteTypesByLength.Add(96, new ValueTuple<string, string>("whole", "<dot/>"));
 		}
-		const uint sixtyFourthsBeamMax = 8U;
 
 		// collect/compress info from notes
 		List<List<MusicNoteInfo>> noteObjects = new List<List<MusicNoteInfo>>();
@@ -132,6 +136,15 @@ public static class MusicDisplay
 			}
 			++timeIdx;
 		}
+
+		return noteObjects;
+	}
+
+	private static string ToXml(string title, string[] instrumentNames, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times, string newline)
+	{
+		const uint sixtyFourthsBeamMax = 8U;
+
+		List<List<MusicNoteInfo>> noteObjects = CollateNotes(scale, rootKey, notes, times);
 
 		// split notes crossing a measure boundary or of uneven length
 		bool isUntimed = bpm == 0;
@@ -291,6 +304,68 @@ public static class MusicDisplay
 		xmlStr += newline + "</score-partwise>";
 
 		return xmlStr;
+	}
+
+	private static byte[] ToMidi(uint[] instrumentIndices, MusicScale scale, uint rootKey, uint bpm, MusicNote[] notes, uint[] times, string filepath)
+	{
+		const uint sixtyFourthsPerQuarter = 16U;
+		const byte noteVelocity = 45; // TODO: vary?
+
+		// setup instruments
+		List<MidiEvent> setupEvents = new List<MidiEvent>();
+		uint channelIdx = 0;
+		for (channelIdx = 0; channelIdx < instrumentIndices.Length; ++channelIdx)
+		{
+			setupEvents.Add(new ProgramChangeEvent((SevenBitNumber)instrumentIndices[channelIdx]) { Channel = (FourBitNumber)channelIdx });
+		}
+
+		// organize notes
+		List<List<MusicNoteInfo>> noteObjects = CollateNotes(scale, rootKey, notes, times);
+		List<Tuple<uint, bool, uint, MusicNoteInfo>> timedInfos = new List<Tuple<uint, bool, uint, MusicNoteInfo>>(); // time, isStart, channel, info
+		channelIdx = 0;
+		foreach (List<MusicNoteInfo> channel in noteObjects)
+		{
+			foreach (MusicNoteInfo note in channel)
+			{
+				timedInfos.Add(Tuple.Create(note.m_time, true, channelIdx, note));
+				timedInfos.Add(Tuple.Create(note.m_time + note.m_length, false, channelIdx, note));
+			}
+			++channelIdx;
+		}
+		timedInfos.Sort((a, b) => a.Item1 == b.Item1 ? (a.Item2 == b.Item2 ? 0 : (b.Item2 ? -1 : 1)) : (a.Item1 < b.Item1 ? -1 : 1));
+
+		// iterate through notes
+		List<MidiEvent> noteEvents = new List<MidiEvent>();
+		uint timePrev = 0;
+		for (int i = 0, n = timedInfos.Count(); i < n; ++i)
+		{
+			Tuple<uint, bool, uint, MusicNoteInfo> info = timedInfos[i];
+
+			// add event for each key in chord
+			uint deltaTime = (uint)((info.Item1 - timePrev) * TicksPerQuarterNoteTimeDivision.DefaultTicksPerQuarterNote / sixtyFourthsPerQuarter);
+			foreach (uint key in info.Item4.m_keys)
+			{
+				noteEvents.Add(info.Item2 ? (MidiEvent)new NoteOnEvent((SevenBitNumber)key, (SevenBitNumber)noteVelocity) { DeltaTime = deltaTime, Channel = (FourBitNumber)info.Item3 } : new NoteOffEvent((SevenBitNumber)key, (SevenBitNumber)0) { DeltaTime = deltaTime, Channel = (FourBitNumber)info.Item3 });
+				deltaTime = 0; // prevent accidentally arpeggiating chords
+			}
+			timePrev = info.Item1;
+		}
+
+		// create file & set tempo
+		MidiFile file = new MidiFile(new TrackChunk(setupEvents), new TrackChunk(noteEvents));
+		file.ReplaceTempoMap(TempoMap.Create(new Tempo((long)(Tempo.Default.MicrosecondsPerQuarterNote * (Tempo.Default.BeatsPerMinute / bpm)))));
+
+		// output as byte array
+		// see https://stackoverflow.com/questions/8143732/stringstream-in-c-sharp#16187809, modified for byte output
+		using (MemoryStream stream = new MemoryStream())
+		{
+			file.Write(stream);
+			stream.Position = 0;
+			using (BinaryReader reader = new BinaryReader(stream))
+			{
+				return reader.ReadBytes((int)stream.Length);
+			}
+		}
 	}
 
 #if UNITY_EDITOR

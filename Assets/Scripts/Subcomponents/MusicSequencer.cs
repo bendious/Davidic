@@ -145,8 +145,8 @@ public class MusicSequencer : CSharpSynth.Sequencer.MidiSequencer
 		m_musicBlock.Display(m_rootKey, m_scale, elementIdMain, instrumentNames, bpm);
 	}
 
-	public string ExportXML(string filepath, string[] instrumentNames, uint bpm)
+	public byte[] Export(string filepath, bool isMidi, uint[] instrumentIndices, string[] instrumentNames, uint bpm)
 	{
-		return m_musicBlock.ExportXML(filepath, m_rootKey, m_scale, instrumentNames, bpm);
+		return m_musicBlock.Export(filepath, isMidi, m_rootKey, m_scale, instrumentIndices, instrumentNames, bpm);
 	}
 }

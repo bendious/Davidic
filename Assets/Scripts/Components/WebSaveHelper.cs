@@ -12,6 +12,7 @@ using UnityEngine.UI;
 public class WebSaveHelper : MonoBehaviour, IPointerDownHandler
 {
 	public MusicPlayerUI m_musicPlayer;
+	[SerializeField] private bool m_isMidi = false;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
     [DllImport("__Internal")]
@@ -22,13 +23,13 @@ public class WebSaveHelper : MonoBehaviour, IPointerDownHandler
     public void OnPointerDown(PointerEventData eventData)
 	{
 #if UNITY_WEBGL && !UNITY_EDITOR
-		var bytes = Encoding.UTF8.GetBytes(m_musicPlayer.Export(null));
-		DownloadFile(gameObject.name, "OnFileDownload", "DavidicOutput.xml", bytes, bytes.Length);
+		byte[] bytes = m_musicPlayer.Export(null, m_isMidi);
+		DownloadFile(gameObject.name, "OnFileDownload", "DavidicOutput" + (m_isMidi ? ".midi" : ".xml"), bytes, bytes.Length);
 #else
-		var path = StandaloneFileBrowser.SaveFilePanel("Export to XML", "", "DavidicOutput", "xml");
+		var path = StandaloneFileBrowser.SaveFilePanel(m_isMidi ? "Export to MIDI" : "Export to XML", "", "DavidicOutput", m_isMidi ? "midi" : "xml");
 		if (!string.IsNullOrEmpty(path))
 		{
-			m_musicPlayer.ExportXML(path);
+			m_musicPlayer.Export(path, m_isMidi);
 		}
 #endif
 	}
